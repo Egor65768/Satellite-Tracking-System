@@ -1,5 +1,5 @@
-   pip install fastapi uvicorn 
-   pip install SQLAlchemy 
-   pip install psycopg2
+   pip install fastapi uvicorn    
+   pip install sqlalchemy[asyncio] asyncpg
+   pip install psycopg2  
      
    
