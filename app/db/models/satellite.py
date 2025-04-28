@@ -3,9 +3,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Date, ForeignKey
 from datetime import date
 from typing import List
-from .country_abbreviations import Country
-from .satellite_characteristic import SatelliteCharacteristic
-from .coverage_zone import CoverageZone
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .country_abbreviations import Country
+    from .satellite_characteristic import SatelliteCharacteristic
+    from .coverage_zone import CoverageZone
 
 
 class Satellite(Base):
@@ -15,8 +18,20 @@ class Satellite(Base):
     norad_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
     launch_date: Mapped[date] = mapped_column(Date)
     country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable=False)
-    country: Mapped["Country"] = relationship("Country", back_populates="satellites",cascade="all, delete-orphan")
+    country: Mapped["Country"] = relationship("Country", back_populates="satellites")
     characteristics: Mapped["SatelliteCharacteristic"] = relationship(
-        "SatelliteCharacteristic", back_populates="satellite", cascade="all, delete-orphan"
+        "SatelliteCharacteristic",
+        back_populates="satellite",
+        cascade="all, delete-orphan",
+        uselist=False,
     )
-    coverage_zones: Mapped[List["CoverageZone"]] = relationship("CoverageZone", back_populates="satellite")
+    coverage_zones: Mapped[List["CoverageZone"]] = relationship(
+        "CoverageZone", back_populates="satellite"
+    )
+
+    def __repr__(self):
+        return (
+            f"<Satellite(international_code='{self.international_code}', "
+            f"name='{self.name_satellite}', norad_id={self.norad_id}, "
+            f"country_id={self.country_id})>"
+        )

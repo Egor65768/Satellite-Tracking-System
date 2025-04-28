@@ -1,8 +1,11 @@
 from .base import Base
-from .satellite import Satellite
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Float, ForeignKey, Text
 from typing import Optional
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .satellite import Satellite
 
 
 class SatelliteCharacteristic(Base):
@@ -19,4 +22,13 @@ class SatelliteCharacteristic(Base):
     expected_lifetime: Mapped[int] = mapped_column(Integer, nullable=False)
     remaining_lifetime: Mapped[int] = mapped_column(Integer, nullable=False)
     details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    satellite: Mapped["Satellite"] = relationship("Satellite", back_populates="characteristics")
+    satellite: Mapped["Satellite"] = relationship(
+        "Satellite", back_populates="characteristics", uselist=False
+    )
+
+    def __repr__(self):
+        return (
+            f"<SatelliteCharacteristic(international_code='{self.international_code}', "
+            f"longitude={self.longitude}, launch_site='{self.launch_site}', "
+            f"rocket='{self.rocket}')>"
+        )
