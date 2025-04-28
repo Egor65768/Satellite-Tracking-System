@@ -23,7 +23,7 @@ class SatelliteCharacteristic(Base):
     remaining_lifetime: Mapped[int] = mapped_column(Integer, nullable=False)
     details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     satellite: Mapped["Satellite"] = relationship(
-        "Satellite", back_populates="characteristics", uselist=False
+        "Satellite", lazy="joined", back_populates="characteristics", uselist=False
     )
 
     def __repr__(self):

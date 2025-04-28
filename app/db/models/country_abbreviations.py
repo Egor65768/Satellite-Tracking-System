@@ -15,7 +15,7 @@ class Country(Base):
     abbreviation: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
     satellites: Mapped[List["Satellite"]] = relationship(
-        "Satellite", back_populates="country"
+        "Satellite", lazy="selectin", back_populates="country"
     )
 
     def __repr__(self):

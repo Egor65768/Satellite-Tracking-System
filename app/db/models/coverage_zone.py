@@ -34,14 +34,18 @@ class CoverageZone(Base):
     image_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
 
     satellite: Mapped["Satellite"] = relationship(
-        "Satellite", back_populates="coverage_zones"
+        "Satellite", lazy="joined", back_populates="coverage_zones"
     )
     regions: Mapped[List["Region"]] = relationship(
-        "Region", secondary=coverage_zone_association, back_populates="coverage_zone"
+        "Region",
+        secondary=coverage_zone_association,
+        lazy="selectin",
+        back_populates="coverage_zone",
     )
     subregions: Mapped[List["Subregion"]] = relationship(
         "Subregion",
         secondary=coverage_zone_association_subregion,
+        lazy="selectin",
         back_populates="coverage_zone",
     )
 

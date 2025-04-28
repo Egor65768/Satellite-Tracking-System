@@ -13,10 +13,13 @@ class Region(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name_region: Mapped[str] = mapped_column(String(60), nullable=False)
     subregions: Mapped[List["Subregion"]] = relationship(
-        "Subregion", back_populates="region"
+        "Subregion", lazy="selectin", back_populates="region"
     )
     coverage_zone: Mapped[List["CoverageZone"]] = relationship(
-        "CoverageZone", secondary="coverage_zone_association", back_populates="regions"
+        "CoverageZone",
+        secondary="coverage_zone_association",
+        lazy="selectin",
+        back_populates="regions",
     )
 
     def __repr__(self):
@@ -28,10 +31,13 @@ class Subregion(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name_subregion: Mapped[str] = mapped_column(String(60), nullable=False)
     id_region: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=False)
-    region: Mapped["Region"] = relationship("Region", back_populates="subregions")
+    region: Mapped["Region"] = relationship(
+        "Region", lazy="joined", back_populates="subregions"
+    )
     coverage_zone: Mapped[List["CoverageZone"]] = relationship(
         "CoverageZone",
         secondary="coverage_zone_association_subregion",
+        lazy="selectin",
         back_populates="subregions",
     )
 

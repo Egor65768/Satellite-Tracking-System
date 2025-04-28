@@ -18,15 +18,18 @@ class Satellite(Base):
     norad_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
     launch_date: Mapped[date] = mapped_column(Date)
     country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable=False)
-    country: Mapped["Country"] = relationship("Country", back_populates="satellites")
+    country: Mapped["Country"] = relationship(
+        "Country", lazy="joined", back_populates="satellites"
+    )
     characteristics: Mapped["SatelliteCharacteristic"] = relationship(
         "SatelliteCharacteristic",
+        lazy="joined",
         back_populates="satellite",
         cascade="all, delete-orphan",
         uselist=False,
     )
     coverage_zones: Mapped[List["CoverageZone"]] = relationship(
-        "CoverageZone", back_populates="satellite"
+        "CoverageZone", lazy="selectin", back_populates="satellite"
     )
 
     def __repr__(self):
