@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 
 class SatelliteCharacteristic(Base):
+    __tablename__ = "satellite_characteristic"
     international_code: Mapped[str] = mapped_column(
         String(50), ForeignKey("satellites.international_code"), primary_key=True
     )

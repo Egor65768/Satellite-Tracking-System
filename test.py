@@ -1,5 +1,9 @@
-from app.core import settings
+from app.schemas import CountryCreate
 
-print(settings.get_db_url())
+c = CountryCreate(
+    abbreviation="CA",
+    full_name="Canada"
+)
 
+print(type(c.model_dump()))
 
