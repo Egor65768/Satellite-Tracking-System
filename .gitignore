@@ -1,0 +1,3 @@
+app/core/.env
+.env.local
+__pycache__
