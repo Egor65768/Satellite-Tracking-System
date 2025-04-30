@@ -16,7 +16,9 @@ class CountryBase(BaseModel):
 class CountryCreate(CountryBase):
     """Схема для создания страны. Наследует все поля CountryBase."""
 
-    pass
+    id: Optional[int] = Field(
+        None, description="ID страны. Оставьте None для автоинкремента."
+    )
 
 
 class CountryUpdate(BaseModel):
