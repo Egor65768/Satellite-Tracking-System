@@ -1,5 +1,5 @@
 from .models import Base,Country,CoverageZone,Region,Satellite,SatelliteCharacteristic,Subregion
-
+from .repositories import CountryRepository
 __all__ = [
     "Base",
     "Country",
@@ -8,4 +8,5 @@ __all__ = [
     "Satellite",
     "SatelliteCharacteristic",
     "Subregion",
+    "CountryRepository"
 ]

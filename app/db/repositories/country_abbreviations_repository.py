@@ -1,15 +1,31 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas import CountryUpdate, CountryCreate, CountryInDB
+from app.schemas import (
+    CountryUpdate,
+    CountryCreate,
+    CountryInDB,
+    Object_ID,
+    PaginationBase,
+)
 from app.db import Country
+from .repository import Repository
+from typing import Optional, List
 
-class country_repository:
 
-    def __init__(self, db: AsyncSession):
-        self.db = db
+class CountryRepository(Repository[Country]):
 
-    async def create_county(self, county_data: CountryCreate) -> CountryInDB:
-        county = Country(**county_data.model_dump())
-        self.db.add(county)
-        await self.db.commit()
-        await self.db.refresh(county)
-        return CountryInDB.model_validate(county)
+    def __init__(self, session: AsyncSession):
+        super().__init__(Country, session)
+
+    async def create_country(self, country: CountryCreate) -> Optional[CountryInDB]:
+        country_db = await self.create(**country.model_dump())
+        if country_db is None:
+            return None
+        return CountryInDB(**country_db.__dict__)
+
+    async def get_country_by_id(self, country_id: Object_ID) -> Optional[CountryInDB]:
+        country_db = await self.get_by_id(**country_id.model_dump())
+        return CountryInDB(**country_db.__dict__) if country_db is not None else None
+
+    async def get_countries(self, pagination: PaginationBase) -> List[CountryInDB]:
+        countries_db = await self.get_multi(**pagination.model_dump())
+        return [CountryInDB(**country.__dict__) for country in countries_db]
