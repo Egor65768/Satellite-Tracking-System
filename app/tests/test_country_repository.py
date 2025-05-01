@@ -1,6 +1,4 @@
 import pytest
-from sqlalchemy.util import await_only
-
 from app.db import CountryRepository
 from app.schemas import (
     CountryCreate,
