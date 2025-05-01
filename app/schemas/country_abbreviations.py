@@ -36,3 +36,9 @@ class CountryInDB(CountryBase):
     """Схема страны, возвращаемая из БД (с ID)."""
 
     id: int
+
+
+class CountryFind(BaseModel):
+    abbreviation: str = Field(
+        ..., min_length=1, max_length=10, json_schema_extra={"example": "CA"}
+    )

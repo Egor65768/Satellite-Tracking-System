@@ -2,7 +2,10 @@ from pydantic import BaseModel, Field
 
 
 class Object_ID(BaseModel):
-    id: int
+    id: int = Field(
+        gt=0,
+        description="Id объекта",
+    )
 
 
 class PaginationBase(BaseModel):

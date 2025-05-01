@@ -1,4 +1,3 @@
-import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from app.core import settings
@@ -25,8 +24,10 @@ async def setup_database(engine):
 
 @pytest_asyncio.fixture()
 async def db_session(engine):
-    async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+    async_session_maker = async_sessionmaker(
+        engine, expire_on_commit=False, autocommit=False
+    )
     async with async_session_maker() as session:
-        async with session.begin():
-            yield session
-            await session.rollback()
+        # async with session.begin():
+        yield session
+        await session.rollback()

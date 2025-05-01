@@ -1,8 +1,8 @@
-from typing import Generic, Type, TypeVar, Any, Optional, Sequence
+from typing import Generic, Type, TypeVar, Any, Optional, Sequence, cast
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, Column
+from sqlalchemy import select, delete, Column, update
 
 T = TypeVar("T", bound="Base")
 
@@ -25,20 +25,30 @@ class Repository(Generic[T]):
             return None
 
     async def get_by_id(self, object_id: Any) -> Optional[T]:
-        if not isinstance(self.model.id, Column):
-            raise TypeError("Model id is not a SQLAlchemy Column")
-        query = select(self.model).where(self.model.id == object_id)
+        id_column = cast(Column, self.model.id)
+        query = select(self.model).where(id_column == object_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def delete_by_id(self, object_id: Any) -> bool:
-        if not isinstance(self.model.id, Column):
-            raise TypeError("Model id is not a SQLAlchemy Column")
-        query = delete(self.model).where(self.model.id == object_id)
+        id_column = cast(Column, self.model.id)
+        query = delete(self.model).where(id_column == object_id)
         result = await self.session.execute(query)
-        return result.rowcount() > 0
+        number_lines_removed: int = result.rowcount  # type: ignore[attr-defined]
+        return number_lines_removed > 0
 
     async def get_multi(self, limit: int = 10, offset: int = 0) -> Sequence[T]:
         query = select(self.model).offset(offset).limit(limit)
         result = await self.session.execute(query)
         return result.scalars().all()
+
+    async def update(self, object_id: Any, **kwargs) -> Optional[T]:
+        try:
+            id_column = cast(Column, self.model.id)
+            query = update(self.model).where(id_column == object_id).values(**kwargs)
+            await self.session.execute(query)
+            return await self.get_by_id(object_id)
+        except SQLAlchemyError:
+            if self.session.in_transaction():
+                await self.session.rollback()
+            return None
