@@ -38,7 +38,7 @@ class SubregionBase(BaseModel):
     )
 
 
-class SubregionInDB(RegionBase):
+class SubregionInDB(SubregionBase):
     """Схема субрегиона, возвращаемая из БД (с ID)."""
 
     id: int
@@ -46,3 +46,18 @@ class SubregionInDB(RegionBase):
     name_region: Optional[str] = Field(
         None, min_length=1, max_length=60, json_schema_extra={"example": "Asia"}
     )
+
+
+class SubregionCreate(SubregionBase):
+    """Схема для создания субрегиона. Наследует все поля SubregionBase."""
+
+    id: Optional[int] = Field(
+        None, description="ID субрегиона. Оставьте None для автоинкремента."
+    )
+    id_region: int
+
+
+class SubregionUpdate(SubregionBase):
+    """Схема для обновления субрегиона (все поля опциональны)."""
+
+    pass

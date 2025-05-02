@@ -1,5 +1,3 @@
-from sqlalchemy.util import await_only
-
 from .repository import BaseRepository
 from app.db import Region, Subregion
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +18,7 @@ class RegionRepository(BaseRepository[Region]):
 
 class SubregionRepository(BaseRepository[Subregion]):
     def __init__(self, session: AsyncSession):
-        super().__init__(Region, session)
+        super().__init__(Subregion, session)
         self.in_db_type = SubregionInDB
 
     async def get_subregion_by_name(

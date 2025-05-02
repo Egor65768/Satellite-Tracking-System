@@ -23,7 +23,7 @@ class Repository(Generic[T]):
             await self.session.flush()
             await self.session.refresh(db_object)
             return db_object
-        except SQLAlchemyError:
+        except SQLAlchemyError as error:
             await self.session.rollback()
             return None
 

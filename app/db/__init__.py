@@ -7,7 +7,7 @@ from .models import (
     SatelliteCharacteristic,
     Subregion,
 )
-from .repositories import CountryRepository
+from .repositories import CountryRepository, RegionRepository, SubregionRepository
 
 __all__ = [
     "Base",
@@ -18,4 +18,6 @@ __all__ = [
     "SatelliteCharacteristic",
     "Subregion",
     "CountryRepository",
+    "RegionRepository",
+    "SubregionRepository",
 ]
