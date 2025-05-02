@@ -4,7 +4,14 @@ from .country_abbreviations import (
     CountryUpdate,
     CountryFind,
 )
-from .region import RegionCreate, RegionInDB
+from .region import (
+    RegionCreate,
+    RegionInDB,
+    RegionBase,
+    RegionUpdate,
+    SubregionInDB,
+    SubregionBase,
+)
 from .common_attributes import Object_ID, PaginationBase
 
 __all__ = [
@@ -16,4 +23,8 @@ __all__ = [
     "CountryFind",
     "RegionCreate",
     "RegionInDB",
+    "RegionBase",
+    "RegionUpdate",
+    "SubregionInDB",
+    "SubregionBase",
 ]

@@ -22,3 +22,27 @@ class RegionInDB(RegionBase):
     """Схема региона, возвращаемая из БД (с ID)."""
 
     id: int
+
+
+class RegionUpdate(RegionBase):
+    """Схема для обновления региона (все поля опциональны)."""
+
+    pass
+
+
+class SubregionBase(BaseModel):
+    """Базовая схема субрегиона (общие поля для всех схем)."""
+
+    name_subregion: str = Field(
+        ..., min_length=1, max_length=60, json_schema_extra={"example": "Moscow region"}
+    )
+
+
+class SubregionInDB(RegionBase):
+    """Схема субрегиона, возвращаемая из БД (с ID)."""
+
+    id: int
+    id_region: int
+    name_region: Optional[str] = Field(
+        None, min_length=1, max_length=60, json_schema_extra={"example": "Asia"}
+    )
