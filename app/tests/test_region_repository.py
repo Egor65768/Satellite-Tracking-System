@@ -8,6 +8,7 @@ from app.schemas import (
     Object_ID,
     RegionUpdate,
     SubregionUpdate,
+    PaginationBase,
 )
 from typing import Optional
 from sqlalchemy.exc import InvalidRequestError
@@ -94,6 +95,50 @@ class TestCreate:
                 await repo_subregion.get_as_model(Object_ID(id=1))
 
 
+class TestGet:
+    @pytest.mark.asyncio
+    async def test_get_subregion_for_region(self, db_session):
+        repo = RegionRepository(db_session)
+        region_id = Object_ID(id=2)
+        subregion_list_test = ["Moscow", "Stavropol", "Saint Petersburg"]
+        async with db_session.begin():
+            subregion_list = await repo.get_subregions(region_id)
+            assert subregion_list is not None
+            assert len(subregion_list) == 3
+            for subregion in subregion_list:
+                assert subregion.name_subregion in subregion_list_test
+                subregion_list_test.remove(subregion.name_subregion)
+
+    @pytest.mark.asyncio
+    async def test_get_subregion_for_region_invalid(self, db_session):
+        repo = RegionRepository(db_session)
+        region_id = Object_ID(id=3)
+        async with db_session.begin():
+            subregion_list = await repo.get_subregions(region_id)
+            assert subregion_list is not None
+            assert len(subregion_list) == 0
+        region_id = Object_ID(id=72)
+        async with db_session.begin():
+            subregion_list = await repo.get_subregions(region_id)
+            assert subregion_list is None
+
+    @pytest.mark.asyncio
+    async def test_get_region_for_subregion(self, db_session):
+        repo = SubregionRepository(db_session)
+        region_id = Object_ID(id=1)
+        async with db_session.begin():
+            region = await repo.get_region(region_id)
+            assert region.name_region == "China"
+        region_id = Object_ID(id=2)
+        async with db_session.begin():
+            region = await repo.get_region(region_id)
+            assert region.name_region == "Russia"
+        region_id = Object_ID(id=55)
+        async with db_session.begin():
+            region = await repo.get_region(region_id)
+            assert region is None
+
+
 class TestUpdate:
     @pytest.mark.asyncio
     async def test_update_region(self, db_session):
@@ -143,3 +188,30 @@ class TestUpdate:
             )
             assert subregion is None
             assert await repo.get_as_model(id_subregion) is None
+
+
+class TestDelete:
+    async def test_delete(self, db_session):
+        repo_region = RegionRepository(db_session)
+        repo_subregion = SubregionRepository(db_session)
+        async with db_session.begin():
+            object_id = Object_ID(id=1)
+            assert len(await repo_region.get_models(PaginationBase())) == 5
+            assert not await repo_region.delete_model(object_id=object_id)
+
+        async with db_session.begin():
+            object_id = Object_ID(id=5)
+            assert len(await repo_region.get_models(PaginationBase())) == 5
+            assert await repo_region.delete_model(object_id=object_id)
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+            assert await repo_region.get_as_model(object_id) is None
+
+        async with db_session.begin():
+            object_id = Object_ID(id=1)
+            assert len(await repo_subregion.get_models(PaginationBase())) == 4
+            assert await repo_subregion.delete_model(object_id=object_id)
+            assert len(await repo_subregion.get_models(PaginationBase())) == 3
+
+        async with db_session.begin():
+            object_id = Object_ID(id=1)
+            assert not await repo_subregion.delete_model(object_id=object_id)

@@ -1,6 +1,6 @@
 from typing import Generic, Type, TypeVar, Any, Optional, Sequence, cast, List
 from pydantic import BaseModel
-
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, Column, update
@@ -79,7 +79,12 @@ class BaseRepository(Repository[T]):
         return await self._convert_to_list_model(db_objects)
 
     async def delete_model(self, object_id: Object_ID) -> bool:
-        return await self.delete_by_id(object_id.id)
+        try:
+            result = await self.delete_by_id(object_id.id)
+        except IntegrityError:
+            await self.session.rollback()
+            return False
+        return result
 
     async def update_model(
         self, object_id: Object_ID, object_update: BaseModel
