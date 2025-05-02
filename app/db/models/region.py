@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class Region(Base):
     __tablename__ = "regions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name_region: Mapped[str] = mapped_column(String(60), nullable=False)
+    name_region: Mapped[str] = mapped_column(String(60), unique=True, nullable=False)
     subregions: Mapped[List["Subregion"]] = relationship(
         "Subregion", lazy="selectin", back_populates="region"
     )

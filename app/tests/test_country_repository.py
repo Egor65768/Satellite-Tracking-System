@@ -50,7 +50,7 @@ class TestCreate:
     async def test_create_country(self, db_session, country_data):
         async with db_session.begin():
             repo = CountryRepository(db_session)
-            country = await repo.create_country(CountryCreate(**country_data))
+            country = await repo.create_entity(CountryCreate(**country_data))
             assert country is not None
             assert country.abbreviation == country_data["abbreviation"]
             assert country.full_name == country_data["full_name"]
@@ -63,29 +63,29 @@ class TestCreate:
         country_id = Object_ID(id=test_country["id"])
         repo = CountryRepository(db_session)
         async with db_session.begin():
-            await repo.create_country(CountryCreate(**test_country))
-            country = await repo.get_country_by_id(country_id)
+            await repo.create_entity(CountryCreate(**test_country))
+            country = await repo.get_as_model(country_id)
             assert country.abbreviation == test_country["abbreviation"]
             assert country.full_name == test_country["full_name"]
             assert country.id == test_country["id"]
         async with db_session.begin():
-            new_country = await repo.create_country(CountryCreate(**test_country))
+            new_country = await repo.create_entity(CountryCreate(**test_country))
             assert new_country is None
             with pytest.raises(InvalidRequestError):
                 await db_session.commit()
         async with db_session.begin():
-            country = await repo.get_country_by_id(country_id)
+            country = await repo.get_as_model(country_id)
             assert country.abbreviation == test_country["abbreviation"]
             assert country.full_name == test_country["full_name"]
             assert country.id == test_country["id"]
-            assert await repo.delete_country_by_id(country_id)
+            assert await repo.delete_model(country_id)
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("country_data,isNone", country_test_data_invalid)
     async def test_create_country_invalid_2(self, db_session, country_data, isNone):
         async with db_session.begin():
             repo = CountryRepository(db_session)
-            country = await repo.create_country(CountryCreate(**country_data))
+            country = await repo.create_entity(CountryCreate(**country_data))
             if not isNone:
                 assert country is not None
                 assert country.abbreviation == country_data["abbreviation"]
@@ -101,9 +101,7 @@ class TestGet:
     async def test_1_get_country_by_id(self, db_session, country_data, inTable):
         async with db_session.begin():
             repo = CountryRepository(db_session)
-            country = await repo.get_country_by_id(
-                Object_ID(id=int(country_data["id"]))
-            )
+            country = await repo.get_as_model(Object_ID(id=int(country_data["id"])))
             if inTable:
                 assert country is not None
                 assert country.abbreviation == country_data["abbreviation"]
@@ -117,7 +115,7 @@ class TestGet:
     async def test_get_country(self, db_session):
         async with db_session.begin():
             repo = CountryRepository(db_session)
-            country_list = await repo.get_countries(PaginationBase())
+            country_list = await repo.get_models(PaginationBase())
             assert len(country_list) == 5
 
     @pytest.mark.asyncio
@@ -142,11 +140,11 @@ class TestDelete:
         async with db_session.begin():
             repo = CountryRepository(db_session)
             country_id = Object_ID(id=int(country_data["id"]))
-            country = await repo.get_country_by_id(country_id)
+            country = await repo.get_as_model(country_id)
             assert country is not None
-            result = await repo.delete_country_by_id(country_id)
+            result = await repo.delete_model(country_id)
             assert result
-            country = await repo.get_country_by_id(country_id)
+            country = await repo.get_as_model(country_id)
             assert country is None
 
     @pytest.mark.asyncio
@@ -154,7 +152,7 @@ class TestDelete:
         async with db_session.begin():
             repo = CountryRepository(db_session)
             country_id = Object_ID(id=150)
-            result = await repo.delete_country_by_id(country_id)
+            result = await repo.delete_model(country_id)
             assert not result
 
 
@@ -165,8 +163,8 @@ class TestUpdate:
         async with db_session.begin():
             repo = CountryRepository(db_session)
             country_id = Object_ID(id=country_id)
-            country_before = await repo.get_country_by_id(country_id)
-            country_after = await repo.update_country(
+            country_before = await repo.get_as_model(country_id)
+            country_after = await repo.update_model(
                 country_id, CountryUpdate(**country_data)
             )
             if not isNone:
@@ -196,14 +194,14 @@ class TestUpdate:
         async with db_session.begin():
             initial_update = CountryUpdate(abbreviation="RU", full_name="Россия")
 
-            updated_country = await repo.update_country(country_id, initial_update)
+            updated_country = await repo.update_model(country_id, initial_update)
 
             assert updated_country is not None
             assert updated_country.abbreviation == "RU"
             assert updated_country.full_name == "Россия"
         async with db_session.begin():
             # Проверка пустого обновления
-            empty_update_result = await repo.update_country(
+            empty_update_result = await repo.update_model(
                 country_id, CountryUpdate(abbreviation=None, full_name=None)
             )
             assert empty_update_result is None
@@ -212,7 +210,7 @@ class TestUpdate:
 
         # Тест 2: Проверка сохранения данных после обновления
         async with db_session.begin():
-            current_country = await repo.get_country_by_id(country_id)
+            current_country = await repo.get_as_model(country_id)
 
             # Проверки
             assert current_country is not None
@@ -220,7 +218,7 @@ class TestUpdate:
             assert current_country.full_name == "Россия"
 
             # Проверка частичного обновления
-            partial_update_result = await repo.update_country(
+            partial_update_result = await repo.update_model(
                 country_id, CountryUpdate(abbreviation="CA", full_name=None)
             )
             assert partial_update_result is None
@@ -229,7 +227,7 @@ class TestUpdate:
 
         # Тест 3: Финальная проверка неизменности данных
         async with db_session.begin():
-            final_country = await repo.get_country_by_id(country_id)
+            final_country = await repo.get_as_model(country_id)
             assert final_country is not None
             assert final_country.abbreviation == "RU"
             assert final_country.full_name == "Россия"
@@ -239,5 +237,5 @@ class TestUpdate:
         async with db_session.begin():
             repo = CountryRepository(db_session)
             country_id = Object_ID(id=1)
-            country = await repo.get_country_by_id(country_id)
+            country = await repo.get_as_model(country_id)
             assert country is not None
