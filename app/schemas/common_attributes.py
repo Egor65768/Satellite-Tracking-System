@@ -8,6 +8,12 @@ class Object_ID(BaseModel):
     )
 
 
+class Object_str_ID(BaseModel):
+    id: str = Field(
+        ..., min_length=5, max_length=60, json_schema_extra={"example": "2012-07B4-1"}
+    )
+
+
 class PaginationBase(BaseModel):
     limit: int = Field(
         default=100,

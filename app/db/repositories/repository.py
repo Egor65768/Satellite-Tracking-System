@@ -1,11 +1,11 @@
-from typing import Generic, Type, TypeVar, Any, Optional, Sequence, cast, List
+from typing import Generic, Type, TypeVar, Any, Optional, Sequence, cast, List, Union
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, Column, update
 
-from app.schemas import Object_ID, PaginationBase
+from app.schemas import Object_ID, PaginationBase, Object_str_ID
 
 T = TypeVar("T", bound="Base")
 
@@ -25,6 +25,7 @@ class Repository(Generic[T]):
             return db_object
         except SQLAlchemyError as error:
             await self.session.rollback()
+            print(error)
             return None
 
     async def get_by_id(self, object_id: Any) -> Optional[T]:
@@ -78,7 +79,7 @@ class BaseRepository(Repository[T]):
         db_objects = await self.get_multi(**pagination.model_dump())
         return await self._convert_to_list_model(db_objects)
 
-    async def delete_model(self, object_id: Object_ID) -> bool:
+    async def delete_model(self, object_id: Union[Object_ID, Object_str_ID]) -> bool:
         try:
             result = await self.delete_by_id(object_id.id)
         except IntegrityError:
@@ -87,7 +88,7 @@ class BaseRepository(Repository[T]):
         return result
 
     async def update_model(
-        self, object_id: Object_ID, object_update: BaseModel
+        self, object_id: Union[Object_ID, Object_str_ID], object_update: BaseModel
     ) -> Optional[BaseModel]:
         object_db = await self.update(
             object_id=object_id.id, **object_update.model_dump(exclude_unset=True)

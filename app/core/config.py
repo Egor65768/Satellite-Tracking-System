@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     DB_PORT: int
     DB_NAME: str
     DB_TEST_NAME: str
+    ACCESS_KEY: str
+    SECRET_KEY: str
+    ENDPOINT_URL: str
+    BUCKET_NAME: str
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")

@@ -28,9 +28,9 @@ class Satellite(Base):
         cascade="all, delete-orphan",
         uselist=False,
     )
-    coverage_zones: Mapped[List["CoverageZone"]] = relationship(
-        "CoverageZone", lazy="selectin", back_populates="satellite"
-    )
+    # coverage_zones: Mapped[List["CoverageZone"]] = relationship(
+    #     "CoverageZone", lazy="selectin", back_populates="satellite"
+    # )
 
     def __repr__(self):
         return (
