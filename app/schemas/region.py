@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 
 class RegionBase(BaseModel):
@@ -61,3 +61,15 @@ class SubregionUpdate(SubregionBase):
     """Схема для обновления субрегиона (все поля опциональны)."""
 
     pass
+
+
+class Subregion(SubregionBase):
+    """Схема для одного субрегиона для регоина"""
+
+    id: int
+
+
+class ZoneRegionDetails(RegionInDB):
+    """Схема для одного региона зоны"""
+
+    subregion_list: List[Subregion]

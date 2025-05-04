@@ -69,7 +69,9 @@ class BaseRepository(Repository[T]):
         entity_db = await self.create(**entity_create.model_dump())
         return await self._convert_to_model(entity_db)
 
-    async def get_as_model(self, object_id: Object_ID) -> Optional[BaseModel]:
+    async def get_as_model(
+        self, object_id: Union[Object_ID, Object_str_ID]
+    ) -> Optional[BaseModel]:
         """Получение сущности с автоматическим преобразованием в выходную модель"""
         db_obj = await self.get_by_id(object_id.id)
         return await self._convert_to_model(db_obj)

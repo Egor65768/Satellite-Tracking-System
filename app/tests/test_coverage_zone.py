@@ -1,12 +1,18 @@
 import pytest
 import aiofiles
-from typing import Optional
-from app.db import CoverageZoneRepository
+from typing import Optional, List
+from app.db import CoverageZoneRepository, RegionRepository, SubregionRepository
 from app.schemas import (
     CoverageZoneCreate,
     CoverageZoneInDB,
     PaginationBase,
+    Object_ID,
     Object_str_ID,
+    RegionInDB,
+    RegionCreate,
+    SubregionInDB,
+    SubregionCreate,
+    RegionBase,
 )
 
 test_create_data = [
@@ -22,6 +28,25 @@ test_create_data = [
     },
 ]
 
+test_get_data = [
+    ("2021-12bd-23730", True),
+    ("2001-1234-24670", True),
+    ("2edecdf", False),
+]
+
+region_test_data = [
+    {"name_region": "China"},
+    {"name_region": "Russia"},
+    {"name_region": "USA"},
+]
+
+subregion_test_data = [
+    {"id": 1, "name_subregion": "Wuhan", "id_region": 1},
+    {"id": 2, "name_subregion": "Moscow", "id_region": 2},
+    {"id": 3, "name_subregion": "Stavropol", "id_region": 2},
+    {"id": 4, "name_subregion": "Saint Petersburg", "id_region": 2},
+]
+
 
 async def get_data_image(path_img: str) -> Optional[bytes]:
     try:
@@ -32,6 +57,28 @@ async def get_data_image(path_img: str) -> Optional[bytes]:
         return None
     except PermissionError:
         return None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("region_data", region_test_data)
+async def test_create_regions(db_session, region_data):
+    async with db_session.begin():
+        repo = RegionRepository(db_session)
+        region: Optional[RegionInDB] = await repo.create_entity(
+            RegionCreate(**region_data)
+        )
+        assert region is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("subregion_data", subregion_test_data)
+async def test_create_subregions(db_session, subregion_data):
+    async with db_session.begin():
+        repo = SubregionRepository(db_session)
+        subregion: Optional[SubregionInDB] = await repo.create_entity(
+            SubregionCreate(**subregion_data)
+        )
+        assert subregion is not None
 
 
 class TestCreate:
@@ -59,6 +106,54 @@ class TestCreate:
                 assert local_data == s3_image_data
 
 
+class TestGet:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("object_id,notNone", test_get_data)
+    async def test_get_1(self, db_session, object_id, notNone):
+        repo = CoverageZoneRepository(db_session)
+        zone_id = Object_str_ID(id=object_id)
+        async with db_session.begin():
+            zone: Optional[CoverageZoneInDB] = await repo.get_as_model(zone_id)
+            if notNone:
+                assert zone is not None
+                assert zone.id == object_id
+            else:
+                assert zone is None
+
+
+class TestZoneRelationship:
+    @pytest.mark.asyncio
+    async def test_add_region(self, db_session):
+        repo = CoverageZoneRepository(db_session)
+        repo_region = RegionRepository(db_session)
+        async with db_session.begin():
+            assert len(await repo_region.get_models(PaginationBase())) == 3
+            region_1 = RegionBase(name_region="Russia")
+            zone_1_id = Object_str_ID(id="2021-12bd-23730")
+            assert await repo.add_region(region_1, zone_1_id)
+            reg_list = await repo.get_region_list(zone_1_id)
+            assert len(await repo.get_region_list(zone_1_id)) == 1
+            assert reg_list[0].name_region == "Russia"
+            region_2 = RegionBase(name_region="Nigeria")
+            assert await repo.add_region(region_2, zone_1_id)
+            assert len(await repo.get_region_list(zone_1_id)) == 2
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+            assert await repo.delete_region(region_1, zone_1_id)
+            reg_list = await repo.get_region_list(zone_1_id)
+            assert len(await repo.get_region_list(zone_1_id)) == 1
+            assert reg_list[0].name_region == "Nigeria"
+            assert await repo.delete_region(region_2, zone_1_id)
+            assert len(await repo.get_region_list(zone_1_id)) == 0
+            nigeria_id = Object_ID(
+                id=(
+                    await repo_region.get_region_by_name(
+                        RegionBase(name_region="Nigeria")
+                    )
+                ).id
+            )
+            await repo_region.delete_model(nigeria_id)
+
+
 class TestDelete:
     @pytest.mark.asyncio
     async def test_delete_1(self, db_session):
@@ -76,3 +171,31 @@ class TestDelete:
                 zone_list = await repo.get_models(PaginationBase())
                 numbers_in_db -= 1
                 assert len(zone_list) == numbers_in_db
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("subregion_data", subregion_test_data)
+async def test_delete_subregions(db_session, subregion_data):
+    async with db_session.begin():
+        repo = SubregionRepository(db_session)
+        object_id = Object_ID(id=subregion_data["id"])
+        assert await repo.delete_model(object_id)
+
+
+@pytest.mark.asyncio
+async def test_delete_regions(db_session):
+    async with db_session.begin():
+        repo = RegionRepository(db_session)
+        region_list: List = await repo.get_models(PaginationBase())
+        for region in region_list:
+            object_id = Object_ID(id=region.id)
+            assert await repo.delete_model(object_id)
+
+
+@pytest.mark.asyncio
+async def test_numbers_region(db_session):
+    async with db_session.begin():
+        region_repo = RegionRepository(db_session)
+        subregion_repo = SubregionRepository(db_session)
+        assert len(await region_repo.get_models(PaginationBase())) == 0
+        assert len(await subregion_repo.get_models(PaginationBase())) == 0
