@@ -1,6 +1,7 @@
+from sqlalchemy.exc import SQLAlchemyError
 from .repository import BaseRepository
 from typing import Optional, List
-from app.db import CoverageZone, Region
+from app.db import CoverageZone, Region, Subregion as Subregion_DB
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import (
     CoverageZoneInDB,
@@ -9,6 +10,8 @@ from app.schemas import (
     ZoneRegionDetails,
     Subregion,
     RegionBase,
+    SubregionCreate,
+    SubregionBase,
 )
 from app.service import S3Service
 from sqlalchemy import select
@@ -97,3 +100,79 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         zone_db.regions.remove(region_to_remove)
         await self.session.flush()
         return True
+
+    async def add_subregion(
+        self, subregion: SubregionCreate, zone_id: Object_str_ID
+    ) -> bool:
+        zone_db = await self.get_by_id(zone_id.id)
+        if not zone_db:
+            return False
+        if any(
+            s.name_subregion == subregion.name_subregion
+            for r in zone_db.regions
+            if r.id == subregion.id_region
+            for s in r.subregions
+        ):
+            return True
+        if not any(subregion.id_region == r.id for r in zone_db.regions):
+            region_db: Optional[Region] = await self.session.get(
+                Region, subregion.id_region
+            )
+            if region_db is not None:
+                zone_db.regions.append(region_db)
+            else:
+                return False
+
+        db_subregion = (
+            await self.session.execute(
+                select(Subregion_DB).where(
+                    Subregion_DB.name_subregion == subregion.name_subregion
+                )
+            )
+        ).scalar_one_or_none()
+
+        if db_subregion is None:
+            db_subregion = Subregion_DB(
+                name_subregion=subregion.name_subregion, id_region=subregion.id_region
+            )
+            self.session.add(db_subregion)
+            await self.session.flush()
+        zone_db.subregions.append(db_subregion)
+        await self.session.flush()
+        return True
+
+    async def delete_subregion(
+        self, subregion: SubregionBase, zone_id: Object_str_ID
+    ) -> bool:
+        zone_db = await self.get_by_id(zone_id.id)
+        if not zone_db:
+            return False
+        subregion_to_remove = next(
+            (
+                s
+                for s in zone_db.subregions
+                if s.name_subregion == subregion.name_subregion
+            ),
+            None,
+        )
+        if not subregion_to_remove:
+            return False
+        region_id = subregion_to_remove.id_region
+        should_remove_region = not any(
+            sr.id_region == region_id
+            for sr in zone_db.subregions
+            if sr != subregion_to_remove  # Исключаем текущий подрегион
+        )
+        zone_db.subregions.remove(subregion_to_remove)
+        if should_remove_region:
+            region_to_remove = next(
+                (r for r in zone_db.regions if r.id == region_id), None
+            )
+            if region_to_remove:
+                zone_db.regions.remove(region_to_remove)
+        try:
+            await self.session.flush()
+            return True
+        except SQLAlchemyError:
+            await self.session.rollback()
+            return False

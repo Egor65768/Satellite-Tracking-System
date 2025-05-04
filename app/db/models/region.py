@@ -28,7 +28,7 @@ class Region(Base):
 
 class Subregion(Base):
     __tablename__ = "subregions"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name_subregion: Mapped[str] = mapped_column(String(60), unique=True, nullable=False)
     id_region: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=False)
     region: Mapped["Region"] = relationship(

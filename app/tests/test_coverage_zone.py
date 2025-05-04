@@ -13,6 +13,8 @@ from app.schemas import (
     SubregionInDB,
     SubregionCreate,
     RegionBase,
+    SubregionBase,
+    ZoneRegionDetails,
 )
 
 test_create_data = [
@@ -41,10 +43,10 @@ region_test_data = [
 ]
 
 subregion_test_data = [
-    {"id": 1, "name_subregion": "Wuhan", "id_region": 1},
-    {"id": 2, "name_subregion": "Moscow", "id_region": 2},
-    {"id": 3, "name_subregion": "Stavropol", "id_region": 2},
-    {"id": 4, "name_subregion": "Saint Petersburg", "id_region": 2},
+    {"name_subregion": "Wuhan", "id_region": 1},
+    {"name_subregion": "Moscow", "id_region": 2},
+    {"name_subregion": "Stavropol", "id_region": 2},
+    {"name_subregion": "Saint Petersburg", "id_region": 2},
 ]
 
 
@@ -153,6 +155,64 @@ class TestZoneRelationship:
             )
             await repo_region.delete_model(nigeria_id)
 
+    async def test_invalid_delete_region(self, db_session):
+        repo = CoverageZoneRepository(db_session)
+        region_1 = RegionBase(name_region="Russia")
+        zone_1_id = Object_str_ID(id="20qqe-12bd-23730")
+        async with db_session.begin():
+            assert not await repo.delete_region(region_1, zone_1_id)
+        async with db_session.begin():
+            zone_1_id = Object_str_ID(id="2021-12bd-23730")
+            region_1 = RegionBase(name_region="kussia")
+            assert not await repo.delete_region(region_1, zone_1_id)
+
+    @pytest.mark.asyncio
+    async def test_add_subregion(self, db_session):
+        repo = CoverageZoneRepository(db_session)
+        repo_subregion = SubregionRepository(db_session)
+        zone_2_id = Object_str_ID(id="2001-1234-24670")
+        async with db_session.begin():
+            assert len(await repo_subregion.get_models(PaginationBase())) == 4
+            zone_2: Optional[SubregionInDB] = await repo.get_as_model(zone_2_id)
+            assert zone_2 is not None
+            assert len(await repo.get_region_list(zone_2_id)) == 0
+            subregion_test_1 = SubregionCreate(
+                name_subregion="Москва", id=None, id_region=2
+            )
+            subregion_test_2 = SubregionCreate(
+                name_subregion="Питер", id=None, id_region=2
+            )
+            assert await repo.add_subregion(subregion_test_1, zone_2_id)
+            assert len(await repo.get_region_list(zone_2_id)) == 1
+            assert await repo.add_subregion(subregion_test_2, zone_2_id)
+            assert len(await repo.get_region_list(zone_2_id)) == 1
+            subregion_1: Optional[SubregionInDB] = (
+                await repo_subregion.get_subregion_by_name(
+                    SubregionBase(name_subregion="Москва")
+                )
+            )
+            assert subregion_1 is not None
+            assert subregion_1.id_region == 2
+            subregion_2: Optional[SubregionInDB] = (
+                await repo_subregion.get_subregion_by_name(
+                    SubregionBase(name_subregion="Питер")
+                )
+            )
+            assert subregion_2 is not None
+            assert subregion_2.id_region == 2
+            region_list: List[ZoneRegionDetails] = await repo.get_region_list(zone_2_id)
+            assert len(region_list) == 1
+            assert len(region_list[0].subregion_list) == 2
+            subregion_base = SubregionBase(name_subregion="Москва")
+            assert await repo.delete_subregion(subregion_base, zone_2_id)
+            region_list: List[ZoneRegionDetails] = await repo.get_region_list(zone_2_id)
+            assert len(region_list) == 1
+            assert len(region_list[0].subregion_list) == 1
+            subregion_base = SubregionBase(name_subregion="Питер")
+            assert await repo.delete_subregion(subregion_base, zone_2_id)
+            region_list: List[ZoneRegionDetails] = await repo.get_region_list(zone_2_id)
+            assert len(region_list) == 0
+
 
 class TestDelete:
     @pytest.mark.asyncio
@@ -174,12 +234,13 @@ class TestDelete:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("subregion_data", subregion_test_data)
-async def test_delete_subregions(db_session, subregion_data):
+async def test_delete_subregions(db_session):
     async with db_session.begin():
         repo = SubregionRepository(db_session)
-        object_id = Object_ID(id=subregion_data["id"])
-        assert await repo.delete_model(object_id)
+        subregion_list: List = await repo.get_models(PaginationBase())
+        for subregion in subregion_list:
+            object_id = Object_ID(id=subregion.id)
+            assert await repo.delete_model(object_id)
 
 
 @pytest.mark.asyncio
