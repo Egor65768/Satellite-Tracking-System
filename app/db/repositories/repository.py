@@ -84,8 +84,9 @@ class BaseRepository(Repository[T]):
     async def delete_model(self, object_id: Union[Object_ID, Object_str_ID]) -> bool:
         try:
             result = await self.delete_by_id(object_id.id)
-        except IntegrityError:
+        except IntegrityError as ee:
             await self.session.rollback()
+            print(ee)
             return False
         return result
 

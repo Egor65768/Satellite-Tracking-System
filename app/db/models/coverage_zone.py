@@ -49,8 +49,8 @@ class CoverageZone(Base):
         back_populates="coverage_zone",
     )
 
-    # def __repr__(self):
-    #     return (
-    #         f"<CoverageZone(id='{self.id}', satellite_code='{self.satellite_code}', "
-    #         f"transmitter_type='{self.transmitter_type}')>"
-    #     )
+    def __repr__(self):
+        return (
+            f"<CoverageZone(id='{self.id}', satellite_code='{self.satellite_code}', "
+            f"transmitter_type='{self.transmitter_type}')>"
+        )

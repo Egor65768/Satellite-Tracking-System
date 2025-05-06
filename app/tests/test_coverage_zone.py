@@ -1,6 +1,7 @@
 import pytest
 import aiofiles
 from typing import Optional, List
+
 from app.db import CoverageZoneRepository, RegionRepository, SubregionRepository
 from app.schemas import (
     CoverageZoneCreate,
@@ -212,6 +213,58 @@ class TestZoneRelationship:
             assert await repo.delete_subregion(subregion_base, zone_2_id)
             region_list: List[ZoneRegionDetails] = await repo.get_region_list(zone_2_id)
             assert len(region_list) == 0
+
+    @pytest.mark.asyncio
+    async def test_add_invalid(self, db_session):
+        repo = CoverageZoneRepository(db_session)
+        repo_subregion = SubregionRepository(db_session)
+        repo_region = RegionRepository(db_session)
+        zone_2_id = Object_str_ID(id="2001-1234-24670")
+        async with db_session.begin():
+            assert len(await repo_region.get_models(PaginationBase())) == 3
+            region_1 = RegionBase(name_region="England")
+            assert len(await repo.get_region_list(zone_2_id)) == 0
+            assert await repo.add_region(region_1, zone_2_id)
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+            assert len(await repo.get_region_list(zone_2_id)) == 1
+            assert await repo.add_region(region_1, zone_2_id)
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+            assert len(await repo.get_region_list(zone_2_id)) == 1
+        async with db_session.begin():
+            assert len(await repo_subregion.get_models(PaginationBase())) == 6
+            subregion_test_1 = SubregionCreate(
+                name_subregion="Урюпинск", id=None, id_region=7
+            )
+            assert not await repo.add_subregion(subregion_test_1, zone_2_id)
+            assert len((await repo.get_region_list(zone_2_id))[0].subregion_list) == 0
+            assert len(await repo_subregion.get_models(PaginationBase())) == 6
+            subregion_test_1 = SubregionCreate(
+                name_subregion="Урюпинск", id=None, id_region=5
+            )
+            assert await repo.add_subregion(subregion_test_1, zone_2_id)
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+            assert len(await repo_subregion.get_models(PaginationBase())) == 7
+        async with db_session.begin():
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+            assert not await repo_region.delete_model(Object_ID(id=5))
+        async with db_session.begin():
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+        async with db_session.begin():
+            assert len(await repo_subregion.get_models(PaginationBase())) == 7
+            assert not await repo_subregion.delete_model(Object_ID(id=7))
+        async with db_session.begin():
+            assert len(await repo_subregion.get_models(PaginationBase())) == 7
+        async with db_session.begin():
+            assert len(await repo.get_region_list(zone_2_id)) == 1
+            assert await repo.delete_region(region_1, zone_2_id)
+            assert len(await repo.get_region_list(zone_2_id)) == 0
+        async with db_session.begin():
+            assert await repo_subregion.delete_model(Object_ID(id=7))
+        async with db_session.begin():
+            assert len(await repo_subregion.get_models(PaginationBase())) == 6
+            assert len(await repo_region.get_models(PaginationBase())) == 4
+            assert await repo_region.delete_model(Object_ID(id=5))
+            assert len(await repo_region.get_models(PaginationBase())) == 3
 
 
 class TestDelete:

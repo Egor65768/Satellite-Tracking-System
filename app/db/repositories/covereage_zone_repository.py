@@ -22,14 +22,18 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         super().__init__(CoverageZone, session)
         self.in_db_type = CoverageZoneInDB
         self.s3 = S3Service()
+        self.S3_PREFIX = "zone/"
         self.base_endpoint = (
             "https://s3.ru-7.storage.selcloud.ru/satellite-tracking-system/"
         )
 
+    async def get_s3_file_key(self, object_id: str) -> str:
+        return f"{self.S3_PREFIX}{object_id}.jpg"
+
     async def create_entity(
         self, entity_create: CoverageZoneCreate
     ) -> Optional[CoverageZoneInDB]:
-        file_key = f"zone/{entity_create.id}.jpg"
+        file_key = await self.get_s3_file_key(entity_create.id)
         if not await self.s3.upload_file(
             file_data=entity_create.image_data, file_key=file_key
         ):
@@ -44,7 +48,7 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
     async def delete_model(self, object_id: Object_str_ID) -> bool:
         if not await super().delete_model(object_id):
             return False
-        file_key = f"zone/{object_id.id}.jpg"
+        file_key = await self.get_s3_file_key(object_id.id)
         await self.s3.delete_file(file_key)
         return True
 
@@ -97,6 +101,9 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         )
         if not region_to_remove:
             return False
+        for subregion in zone_db.subregions:
+            if subregion.id_region == region_to_remove.id:
+                zone_db.subregions.remove(subregion)
         zone_db.regions.remove(region_to_remove)
         await self.session.flush()
         return True
