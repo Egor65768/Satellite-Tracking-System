@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 
 import pytest
 from app.db import (
@@ -18,7 +18,6 @@ from app.schemas import (
     SatelliteCompleteInfo,
     CountryFind,
 )
-from app.db.models import Satellite, SatelliteCharacteristic
 
 satellite_test_date = [
     {
@@ -26,14 +25,14 @@ satellite_test_date = [
         "name_satellite": "Yaml-5012",
         "norad_id": 318420,
         "launch_date": date(2012, 1, 7),
-        "country_id": 4,
+        "country_id": 1,
     },
     {
         "international_code": "321_B_123_A",
         "name_satellite": "Yaml-5011",
         "norad_id": 318421,
         "launch_date": date(1999, 12, 7),
-        "country_id": 4,
+        "country_id": 1,
     },
 ]
 satellite_characteristic_test_date = [
@@ -78,15 +77,19 @@ class TestCreate:
         country_repo = CountryRepository(db_session)
         country_data = {"abbreviation": "FA", "full_name": "Франция"}
         async with db_session.begin():
+            assert len(await country_repo.get_models(PaginationBase())) == 0
             assert await country_repo.create_entity(CountryCreate(**country_data))
-            assert len(await country_repo.get_models(PaginationBase())) == 3
+            assert len(await country_repo.get_models(PaginationBase())) == 1
             country_db = await country_repo.get_by_abbreviation(
                 CountryFind(abbreviation="FA")
             )
+            country_id = country_db.id
             country: Optional[CountryInDB] = await country_repo.get_as_model(
                 Object_ID(id=country_db.id)
             )
             assert country.abbreviation == country_data["abbreviation"]
+        for i in range(len(satellite_test_date)):
+            satellite_test_date[i]["country_id"] = country_id
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("satellite_date", satellite_test_date)

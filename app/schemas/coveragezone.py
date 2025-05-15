@@ -8,6 +8,9 @@ class CoverageZoneBase(BaseModel):
     transmitter_type: str = Field(
         ..., min_length=5, max_length=25, json_schema_extra={"example": "Ku-band"}
     )
+    satellite_code: str = Field(
+        ..., min_length=5, max_length=50, json_schema_extra={"example": "123_A_123_A"}
+    )
 
 
 class CoverageZoneCreate(CoverageZoneBase):

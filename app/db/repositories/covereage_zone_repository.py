@@ -12,6 +12,7 @@ from app.schemas import (
     RegionBase,
     SubregionCreate,
     SubregionBase,
+    SatelliteInDB,
 )
 from app.service import S3Service
 from sqlalchemy import select
@@ -34,14 +35,15 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         self, entity_create: CoverageZoneCreate
     ) -> Optional[CoverageZoneInDB]:
         file_key = await self.get_s3_file_key(entity_create.id)
-        # if not await self.s3.upload_file(
-        #     file_data=entity_create.image_data, file_key=file_key
-        # ):
-        #     return None
+        if not await self.s3.upload_file(
+            file_data=entity_create.image_data, file_key=file_key
+        ):
+            return None
         coverage_zone = CoverageZoneInDB(
             id=entity_create.id,
             transmitter_type=entity_create.transmitter_type,
             image_data=self.base_endpoint + file_key,
+            satellite_code=entity_create.satellite_code,
         )
         return await super().create_entity(coverage_zone)
 
@@ -49,7 +51,7 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         if not await super().delete_model(object_id):
             return False
         file_key = await self.get_s3_file_key(object_id.id)
-        # await self.s3.delete_file(file_key)
+        await self.s3.delete_file(file_key)
         return True
 
     async def get_region_list(
@@ -183,3 +185,9 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         except SQLAlchemyError:
             await self.session.rollback()
             return False
+
+    async def get_satellite(self, zone_id: Object_str_ID) -> Optional[SatelliteInDB]:
+        zone_db = await self.get_by_id(zone_id.id)
+        if not zone_db:
+            return None
+        return SatelliteInDB(**zone_db.satellite.__dict__)

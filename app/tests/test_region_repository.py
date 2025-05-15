@@ -215,3 +215,19 @@ class TestDelete:
         async with db_session.begin():
             object_id = Object_ID(id=1)
             assert not await repo_subregion.delete_model(object_id=object_id)
+
+    async def test_delete_2(self, db_session):
+        repo_region = RegionRepository(db_session)
+        repo_subregion = SubregionRepository(db_session)
+        async with db_session.begin():
+            subregion_list = await repo_subregion.get_models(PaginationBase())
+            assert len(subregion_list) != 0
+            for subregion in subregion_list:
+                assert await repo_subregion.delete_model(Object_ID(id=subregion.id))
+            assert len(await repo_subregion.get_models(PaginationBase())) == 0
+
+            region_list = await repo_region.get_models(PaginationBase())
+            assert len(region_list) != 0
+            for region in region_list:
+                assert await repo_region.delete_model(Object_ID(id=region.id))
+            assert len(await repo_region.get_models(PaginationBase())) == 0

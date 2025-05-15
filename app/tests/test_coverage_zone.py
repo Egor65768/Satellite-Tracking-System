@@ -2,7 +2,13 @@ import pytest
 import aiofiles
 from typing import Optional, List
 
-from app.db import CoverageZoneRepository, RegionRepository, SubregionRepository
+from app.db import (
+    CoverageZoneRepository,
+    RegionRepository,
+    SubregionRepository,
+    CountryRepository,
+    SatelliteRepository,
+)
 from app.schemas import (
     CoverageZoneCreate,
     CoverageZoneInDB,
@@ -16,7 +22,11 @@ from app.schemas import (
     RegionBase,
     SubregionBase,
     ZoneRegionDetails,
+    CountryCreate,
+    SatelliteCreate,
 )
+
+from app.tests.test_satellite import satellite_test_date
 
 test_create_data = [
     {
@@ -63,6 +73,23 @@ async def get_data_image(path_img: str) -> Optional[bytes]:
 
 
 @pytest.mark.asyncio
+async def test_create_country(db_session):
+    country_repo = CountryRepository(db_session)
+    country_data = {"abbreviation": "FA", "full_name": "Франция"}
+    async with db_session.begin():
+        assert await country_repo.create_entity(CountryCreate(**country_data))
+        assert len(await country_repo.get_models(PaginationBase())) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("satellite_date", satellite_test_date)
+async def test_create_satellite(db_session, satellite_date):
+    repo = SatelliteRepository(db_session)
+    async with db_session.begin():
+        assert await repo.create_entity(SatelliteCreate(**satellite_date))
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("region_data", region_test_data)
 async def test_create_regions(db_session, region_data):
     async with db_session.begin():
@@ -94,6 +121,7 @@ class TestCreate:
             id=zone_data["id"],
             transmitter_type=zone_data["transmitter_type"],
             image_data=local_data,
+            satellite_code=satellite_test_date[0]["international_code"],
         )
         repo = CoverageZoneRepository(db_session)
         async with db_session.begin():
@@ -101,12 +129,12 @@ class TestCreate:
             assert zone is not None
             assert zone.id == zone_data["id"]
             assert zone.transmitter_type == zone_data["transmitter_type"]
-            # async with await repo.s3._get_client() as client:
-            #     response = await client.get_object(
-            #         Bucket=repo.s3.bucket_name, Key=f"zone/{zone.id}.jpg"
-            #     )
-            #     s3_image_data = await response["Body"].read()
-            #     assert local_data == s3_image_data
+            async with await repo.s3._get_client() as client:
+                response = await client.get_object(
+                    Bucket=repo.s3.bucket_name, Key=f"zone/{zone.id}.jpg"
+                )
+                s3_image_data = await response["Body"].read()
+                assert local_data == s3_image_data
 
 
 class TestGet:
@@ -120,6 +148,12 @@ class TestGet:
             if notNone:
                 assert zone is not None
                 assert zone.id == object_id
+                satellite = await repo.get_satellite(zone_id)
+                assert satellite is not None
+                assert satellite.norad_id == satellite_test_date[0]["norad_id"]
+                assert (
+                    satellite.name_satellite == satellite_test_date[0]["name_satellite"]
+                )
             else:
                 assert zone is None
 
@@ -313,3 +347,27 @@ async def test_numbers_region(db_session):
         subregion_repo = SubregionRepository(db_session)
         assert len(await region_repo.get_models(PaginationBase())) == 0
         assert len(await subregion_repo.get_models(PaginationBase())) == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_satellite(db_session):
+    async with db_session.begin():
+        satellite_repo = SatelliteRepository(db_session)
+        satellite_list = await satellite_repo.get_models(PaginationBase())
+        assert len(satellite_list) != 0
+        for satellite in satellite_list:
+            assert await satellite_repo.delete_model(
+                Object_str_ID(id=satellite.international_code)
+            )
+        assert len(await satellite_repo.get_models(PaginationBase())) == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_country(db_session):
+    async with db_session.begin():
+        country_repo = CountryRepository(db_session)
+        country_list = await country_repo.get_models(PaginationBase())
+        assert len(country_list) != 0
+        for country in country_list:
+            assert await country_repo.delete_model(Object_ID(id=country.id))
+        assert len(await country_repo.get_models(PaginationBase())) == 0

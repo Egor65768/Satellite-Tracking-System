@@ -6,6 +6,7 @@ from app.schemas import (
     PaginationBase,
     CountryFind,
     CountryUpdate,
+    CountryInDB,
 )
 from sqlalchemy.exc import InvalidRequestError
 
@@ -239,3 +240,13 @@ class TestDelete:
             country_id = Object_ID(id=150)
             result = await repo.delete_model(country_id)
             assert not result
+
+    @pytest.mark.asyncio
+    async def test_3(self, db_session):
+        async with db_session.begin():
+            repo = CountryRepository(db_session)
+            country_list = await repo.get_models(PaginationBase())
+            assert len(country_list) == 2
+            for country in country_list:
+                await repo.delete_model(Object_ID(id=country.id))
+            assert len(await repo.get_models(PaginationBase())) == 0
