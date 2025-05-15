@@ -12,6 +12,8 @@ from .repositories import (
     RegionRepository,
     SubregionRepository,
     CoverageZoneRepository,
+    SatelliteRepository,
+    SatelliteCharacteristicRepository,
 )
 
 __all__ = [
@@ -26,4 +28,6 @@ __all__ = [
     "RegionRepository",
     "SubregionRepository",
     "CoverageZoneRepository",
+    "SatelliteRepository",
+    "SatelliteCharacteristicRepository",
 ]

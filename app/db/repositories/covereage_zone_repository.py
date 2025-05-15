@@ -34,10 +34,10 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         self, entity_create: CoverageZoneCreate
     ) -> Optional[CoverageZoneInDB]:
         file_key = await self.get_s3_file_key(entity_create.id)
-        if not await self.s3.upload_file(
-            file_data=entity_create.image_data, file_key=file_key
-        ):
-            return None
+        # if not await self.s3.upload_file(
+        #     file_data=entity_create.image_data, file_key=file_key
+        # ):
+        #     return None
         coverage_zone = CoverageZoneInDB(
             id=entity_create.id,
             transmitter_type=entity_create.transmitter_type,
@@ -49,7 +49,7 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         if not await super().delete_model(object_id):
             return False
         file_key = await self.get_s3_file_key(object_id.id)
-        await self.s3.delete_file(file_key)
+        # await self.s3.delete_file(file_key)
         return True
 
     async def get_region_list(

@@ -18,6 +18,13 @@ from .region import (
 )
 from .common_attributes import Object_ID, PaginationBase, Object_str_ID
 from .coveragezone import CoverageZoneCreate, CoverageZoneInDB
+from .satellite import (
+    SatelliteCreate,
+    SatelliteInDB,
+    SatelliteCharacteristicInDB,
+    SatelliteCharacteristicCreate,
+    SatelliteCompleteInfo,
+)
 
 __all__ = [
     "CountryCreate",
@@ -39,4 +46,9 @@ __all__ = [
     "Object_str_ID",
     "ZoneRegionDetails",
     "Subregion",
+    "SatelliteCreate",
+    "SatelliteInDB",
+    "SatelliteCharacteristicInDB",
+    "SatelliteCharacteristicCreate",
+    "SatelliteCompleteInfo",
 ]

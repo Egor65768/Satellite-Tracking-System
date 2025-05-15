@@ -24,8 +24,8 @@ class Repository(Generic[T]):
             await self.session.refresh(db_object)
             return db_object
         except SQLAlchemyError as error:
-            await self.session.rollback()
             print(error)
+            await self.session.rollback()
             return None
 
     async def get_by_id(self, object_id: Any) -> Optional[T]:
@@ -84,9 +84,8 @@ class BaseRepository(Repository[T]):
     async def delete_model(self, object_id: Union[Object_ID, Object_str_ID]) -> bool:
         try:
             result = await self.delete_by_id(object_id.id)
-        except IntegrityError as ee:
+        except IntegrityError:
             await self.session.rollback()
-            print(ee)
             return False
         return result
 

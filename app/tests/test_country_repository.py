@@ -133,29 +133,6 @@ class TestGet:
             assert country.id == country_data["id"]
 
 
-class TestDelete:
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("country_data", country_test_data)
-    async def test_1_get_country_by_id(self, db_session, country_data):
-        async with db_session.begin():
-            repo = CountryRepository(db_session)
-            country_id = Object_ID(id=int(country_data["id"]))
-            country = await repo.get_as_model(country_id)
-            assert country is not None
-            result = await repo.delete_model(country_id)
-            assert result
-            country = await repo.get_as_model(country_id)
-            assert country is None
-
-    @pytest.mark.asyncio
-    async def test_1_get_country_by_id(self, db_session):
-        async with db_session.begin():
-            repo = CountryRepository(db_session)
-            country_id = Object_ID(id=150)
-            result = await repo.delete_model(country_id)
-            assert not result
-
-
 class TestUpdate:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("country_data,country_id,isNone", country_update_test_data)
@@ -239,3 +216,26 @@ class TestUpdate:
             country_id = Object_ID(id=1)
             country = await repo.get_as_model(country_id)
             assert country is not None
+
+
+class TestDelete:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("country_data", country_test_data)
+    async def test_1_get_country_by_id(self, db_session, country_data):
+        async with db_session.begin():
+            repo = CountryRepository(db_session)
+            country_id = Object_ID(id=int(country_data["id"]))
+            country = await repo.get_as_model(country_id)
+            assert country is not None
+            result = await repo.delete_model(country_id)
+            assert result
+            country = await repo.get_as_model(country_id)
+            assert country is None
+
+    @pytest.mark.asyncio
+    async def test_2_get_country_by_id(self, db_session):
+        async with db_session.begin():
+            repo = CountryRepository(db_session)
+            country_id = Object_ID(id=150)
+            result = await repo.delete_model(country_id)
+            assert not result
