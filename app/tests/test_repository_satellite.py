@@ -6,7 +6,6 @@ from app.db import (
     SatelliteCharacteristicRepository,
     CountryRepository,
 )
-from datetime import date
 from app.schemas import (
     Object_ID,
     Object_str_ID,
@@ -19,50 +18,8 @@ from app.schemas import (
     CountryFind,
 )
 
-satellite_test_date = [
-    {
-        "international_code": "123_A_123_A",
-        "name_satellite": "Yaml-5012",
-        "norad_id": 318420,
-        "launch_date": date(2012, 1, 7),
-        "country_id": 1,
-    },
-    {
-        "international_code": "321_B_123_A",
-        "name_satellite": "Yaml-5011",
-        "norad_id": 318421,
-        "launch_date": date(1999, 12, 7),
-        "country_id": 1,
-    },
-]
-satellite_characteristic_test_date = [
-    {
-        "international_code": "123_A_123_A",
-        "longitude": 112.1,
-        "period": 1311.2,
-        "launch_site": "Cape Canaveral",
-        "rocket": "Falcon 9",
-        "launch_mass": 100097.9,
-        "manufacturer": "Spacex",
-        "model": "dj3rw534",
-        "expected_lifetime": 16,
-        "remaining_lifetime": 3,
-        "details": "Ra sdk qhl chl cnelnlanljb jcbekj bkjbcb",
-    },
-    {
-        "international_code": "321_B_123_A",
-        "longitude": 171.1,
-        "period": 1731.1,
-        "launch_site": "Cape Canaveral",
-        "rocket": "Falcon 9",
-        "launch_mass": 123847.9,
-        "manufacturer": "Spacex",
-        "model": "dj3ij3334",
-        "expected_lifetime": 20,
-        "remaining_lifetime": 5,
-        "details": "nfhehdlhvefoihouefhouhofd",
-    },
-]
+from app.tests.test_data import satellite_test_date, satellite_characteristic_test_date
+
 satellite_complete_data = [
     (sat_data, sat_characteristic)
     for sat_data, sat_characteristic in zip(
@@ -187,3 +144,30 @@ class TestCreateComplete:
             assert satellite_info.international_code == "123_A_123_A"
             assert satellite_info.launch_mass == satellite_characteristic.launch_mass
             assert satellite_info.norad_id == satellite_data.norad_id
+
+
+@pytest.mark.asyncio
+async def test_delete_satellite(db_session):
+    repo = SatelliteRepository(db_session)
+    async with db_session.begin():
+        satellite_list = await repo.get_models(PaginationBase())
+        assert len(satellite_list) != 0
+        for satellite in satellite_list:
+            assert await repo.delete_model(
+                Object_str_ID(id=satellite.international_code)
+            )
+        assert len(await repo.get_models(PaginationBase())) == 0
+    repo = SatelliteCharacteristicRepository(db_session)
+    async with db_session.begin():
+        assert len(await repo.get_models(PaginationBase())) == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_country(db_session):
+    repo = CountryRepository(db_session)
+    async with db_session.begin():
+        country_list = await repo.get_models(PaginationBase())
+        assert len(country_list) != 0
+        for country in country_list:
+            assert await repo.delete_model(Object_ID(id=country.id))
+        assert len(await repo.get_models(PaginationBase())) == 0

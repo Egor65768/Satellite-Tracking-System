@@ -26,7 +26,7 @@ from app.schemas import (
     SatelliteCreate,
 )
 
-from app.tests.test_satellite import satellite_test_date
+from app.tests.test_repository_satellite import satellite_test_date
 
 test_create_data = [
     {

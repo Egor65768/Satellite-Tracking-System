@@ -76,7 +76,7 @@ class BaseRepository(Repository[T]):
         db_obj = await self.get_by_id(object_id.id)
         return await self._convert_to_model(db_obj)
 
-    async def get_models(self, pagination: PaginationBase) -> List[BaseModel]:
+    async def get_models(self, pagination: PaginationBase) -> List:
         """Получение сущностей с автоматическим преобразованием в список выходных моделей"""
         db_objects = await self.get_multi(**pagination.model_dump())
         return await self._convert_to_list_model(db_objects)

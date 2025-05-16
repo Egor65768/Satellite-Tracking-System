@@ -6,42 +6,14 @@ from app.schemas import (
     PaginationBase,
     CountryFind,
     CountryUpdate,
-    CountryInDB,
 )
 from sqlalchemy.exc import InvalidRequestError
-
-country_test_data = [
-    {"abbreviation": "CA", "full_name": "Канада", "id": 1},
-    {"abbreviation": "US", "full_name": "США", "id": 2},
-    {"abbreviation": "RU", "full_name": "Россия", "id": 3},
-]
-
-country_test_data_invalid = [
-    ({"abbreviation": "NOR", "full_name": "Норвегия", "id": 4}, False),
-    ({"abbreviation": "NO", "full_name": "Англия", "id": 1}, True),
-    ({"abbreviation": "NOR", "full_name": "Англия", "id": 5}, True),
-    ({"abbreviation": "NOR", "full_name": "Норвегия", "id": 5}, True),
-    ({"abbreviation": "ISR", "full_name": "Израиль", "id": 5}, False),
-]
-
-country_test_get = [
-    ({"abbreviation": "CA", "full_name": "Канада", "id": 1}, True),
-    ({"abbreviation": "US", "full_name": "США", "id": 2}, True),
-    ({"abbreviation": "RU", "full_name": "Россия", "id": 3}, True),
-    ({"id": 10}, False),
-    ({"id": 6}, False),
-    ({"abbreviation": "NOR", "full_name": "Норвегия", "id": 4}, True),
-    ({"abbreviation": "ISR", "full_name": "Израиль", "id": 5}, True),
-]
-
-country_update_test_data = [
-    ({"abbreviation": "CAC"}, 1, False),
-    ({"abbreviation": "CC", "full_name": "Англия"}, 2, False),
-    ({"abbreviation": "CA", "full_name": "США"}, 101, True),
-    ({"abbreviation": "CA", "full_name": "ENNNNN"}, 3, False),
-    ({"abbreviation": "CA", "full_name": "Ftd"}, 4, True),
-    ({"abbreviation": "KSJSL", "full_name": "ENNNNN"}, 4, True),
-]
+from app.tests.test_data import (
+    country_test_data,
+    country_test_get,
+    country_test_data_invalid,
+    country_update_test_data,
+)
 
 
 class TestCreate:
