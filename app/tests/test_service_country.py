@@ -1,17 +1,13 @@
 import pytest
 from app.tests.test_data import (
     country_test_data,
-    country_test_get,
     country_test_data_invalid,
-    country_update_test_data,
 )
 from app.service import CountryService
 from app.db import CountryRepository
 from app.schemas import (
     CountryUpdate,
-    CountryInDB,
     CountryCreate,
-    CountryFind,
     Object_ID,
     PaginationBase,
 )
@@ -84,9 +80,7 @@ class TestUpdate:
             await country_service.update_country(
                 country_id, CountryUpdate(**update_data)
             )
-            country = await country_service.get_by_abbreviation(
-                CountryFind(abbreviation="UA")
-            )
+            country = await country_service.get_by_abbreviation("UA")
             assert country is not None
             assert country.abbreviation == "UA"
             assert country.id == 1
@@ -105,9 +99,7 @@ class TestUpdate:
             )
             assert country is None
         async with db_session.begin():
-            country = await country_service.get_by_abbreviation(
-                CountryFind(abbreviation="UA")
-            )
+            country = await country_service.get_by_abbreviation("UA")
             assert country is not None
             assert country.abbreviation == "UA"
 

@@ -18,9 +18,11 @@ class CountryService:
     def __init__(self, repository: CountryRepository):
         self.repository = repository
 
-    async def get_by_abbreviation(
-        self, abbreviation: CountryFind
-    ) -> Optional[CountryInDB]:
+    async def get_by_abbreviation(self, abbreviation: str) -> Optional[CountryInDB]:
+        try:
+            abbreviation = CountryFind(abbreviation=abbreviation)
+        except Exception:
+            return None
         return await self.repository.get_by_abbreviation(abbreviation)
 
     async def create_country(
@@ -38,3 +40,6 @@ class CountryService:
 
     async def get_countries(self, pagination: PaginationBase) -> List[CountryInDB]:
         return await self.repository.get_models(pagination)
+
+    async def get_country(self, country_id: int) -> Optional[CountryInDB]:
+        return await self.repository.get_as_model(Object_ID(id=country_id))

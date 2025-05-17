@@ -14,7 +14,7 @@ from app.schemas import (
     SubregionBase,
     SatelliteInDB,
 )
-from app.service import S3Service
+from app.s3_service.s3_service import S3Service
 from sqlalchemy import select
 
 
