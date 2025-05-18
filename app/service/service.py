@@ -4,8 +4,5 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def create_country_service(session: AsyncSession) -> CountryService:
-    pass
-
-
-#     repo = CountryRepository(session)
-#     return CountryService(repo)
+    repo = CountryRepository(session)
+    return CountryService(repo)

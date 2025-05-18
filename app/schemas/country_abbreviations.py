@@ -17,7 +17,7 @@ class CountryCreate(CountryBase):
     """Схема для создания страны. Наследует все поля CountryBase."""
 
     id: Optional[int] = Field(
-        None, description="ID страны. Оставьте None для автоинкремента."
+        None, gt=0, description="ID страны. Оставьте None для автоинкремента."
     )
 
 

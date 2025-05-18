@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Path, Depends, Response, status, HTTPException, Query
-from typing import Annotated, Optional
+from fastapi import APIRouter, Path, Depends, status, HTTPException, Query
+from typing import Annotated, List
 from app.core import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.service import create_country_service
-from app.schemas import CountryInDB
+from app.schemas import CountryInDB, CountryCreate, PaginationBase, CountryUpdate
 
 router = APIRouter()
 
 
 @router.get(
-    "/{country_id}",
-    response_model=Optional[CountryInDB],
+    "/id/{country_id}",
+    response_model=CountryInDB,
     summary="Get country by ID",
     description="Retrieves a country by its unique identifier",
     responses={
@@ -21,7 +21,7 @@ router = APIRouter()
 async def get_country_by_id(
     country_id: Annotated[int, Path(title="The ID of the country")],
     db: AsyncSession = Depends(get_db),
-) -> Optional[CountryInDB]:
+) -> CountryInDB:
     country_service = create_country_service(db)
     country = await country_service.get_country(country_id)
     if country is None:
@@ -32,8 +32,8 @@ async def get_country_by_id(
 
 
 @router.get(
-    "/",
-    response_model=Optional[CountryInDB],
+    "/abbreviation/",
+    response_model=CountryInDB,
     summary="Get country by country abbreviation",
     description="Returns a country by its unique abbreviation",
     responses={
@@ -52,11 +52,110 @@ async def get_country_by_abbreviation(
         ),
     ],
     db: AsyncSession = Depends(get_db),
-) -> Optional[CountryInDB]:
+) -> CountryInDB:
     country_service = create_country_service(db)
     country = await country_service.get_by_abbreviation(abbreviation)
     if country is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
+        )
+    return country
+
+
+@router.post(
+    path="/",
+    response_model=CountryInDB,
+    summary="Create country",
+    description="Returns the country if created successfully",
+    responses={
+        409: {"description": "Country has not been created"},
+        200: {"description": "Country create", "model": CountryInDB},
+    },
+)
+async def create_country(
+    country_create: CountryCreate,
+    db: AsyncSession = Depends(get_db),
+) -> CountryInDB:
+    country_service = create_country_service(db)
+    country = await country_service.create_country(country_create)
+    if country is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A country with such data cannot be created",
+        )
+    return country
+
+
+@router.delete(
+    "/{country_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete country by ID",
+    description="Returns nothing",
+    responses={
+        404: {"description": "Country not found"},
+        204: {"description": "Country was successfully deleted, no content returned"},
+    },
+)
+async def delete_by_id(
+    country_id: Annotated[int, Path(title="The ID of the country")],
+    db: AsyncSession = Depends(get_db),
+):
+    country_service = create_country_service(db)
+    country = await country_service.delete_country(country_id)
+    if not country:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
+        )
+    return None
+
+
+@router.get(
+    "/list/",
+    response_model=List[CountryInDB],
+    summary="Get a list of countries",
+    responses={
+        200: {"description": "Countries list", "model": List[CountryInDB]},
+    },
+)
+async def get_countries(
+    db: AsyncSession = Depends(get_db),
+    limit: Annotated[int, Query(ge=1)] = 10,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> List[CountryInDB]:
+    country_service = create_country_service(db)
+    return await country_service.get_countries(
+        PaginationBase(limit=limit, offset=offset)
+    )
+
+
+@router.put(
+    "/{country_id}",
+    response_model=CountryInDB,
+    summary="Update country information",
+    description="Updates the information of a country. "
+    "Upon successful update, returns the updated country details.",
+    responses={
+        404: {"description": "Country not found"},
+        409: {
+            "description": "Conflict - Country could not be updated (e.g., invalid data or constraints violation)"
+        },
+        200: {"description": "Country updated", "model": CountryInDB},
+    },
+)
+async def update_country(
+    country_update: CountryUpdate,
+    country_id: Annotated[int, Path(title="The ID of the country")],
+    db: AsyncSession = Depends(get_db),
+) -> CountryInDB:
+    country_service = create_country_service(db)
+    if await country_service.get_country(country_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
+        )
+    country = await country_service.update_country(country_id, country_update)
+    if country is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A country with such data cannot be updated",
         )
     return country

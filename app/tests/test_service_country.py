@@ -8,7 +8,6 @@ from app.db import CountryRepository
 from app.schemas import (
     CountryUpdate,
     CountryCreate,
-    Object_ID,
     PaginationBase,
 )
 
@@ -65,7 +64,7 @@ class TestUpdate:
         repo = CountryRepository(db_session)
         country_service = CountryService(repo)
         country_data = country_test_data[0]
-        country_id = Object_ID(id=country_data.get("id"))
+        country_id = country_data.get("id")
         update_data = {"abbreviation": "UA"}
         async with db_session.begin():
             country = await country_service.update_country(
@@ -91,7 +90,7 @@ class TestUpdate:
         repo = CountryRepository(db_session)
         country_service = CountryService(repo)
         country_data = country_test_data[0]
-        country_id = Object_ID(id=country_data.get("id"))
+        country_id = country_data.get("id")
         update_data = {"full_name": country_test_data[1].get("full_name")}
         async with db_session.begin():
             country = await country_service.update_country(
@@ -110,12 +109,12 @@ class TestDelete:
         repo = CountryRepository(db_session)
         country_service = CountryService(repo)
         async with db_session.begin():
-            country_id = Object_ID(id=52)
+            country_id = 52
             assert not await country_service.delete_country(country_id)
         async with db_session.begin():
             country_list = await country_service.get_countries(PaginationBase())
             assert len(country_list) == 5
             for country in country_list:
-                assert await country_service.delete_country(Object_ID(id=country.id))
+                assert await country_service.delete_country(country.id)
             country_list = await country_service.get_countries(PaginationBase())
             assert len(country_list) == 0
