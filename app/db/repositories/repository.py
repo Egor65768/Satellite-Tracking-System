@@ -135,5 +135,4 @@ class BaseRepository(Repository[T]):
         query = select(self.model).where(condition)
         result = await self.session.execute(query)
         db_obj = result.scalar_one_or_none()
-
-        return model_type(**db_obj.__dict__)
+        return model_type(**db_obj.__dict__) if db_obj is not None else None

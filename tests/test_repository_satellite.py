@@ -18,7 +18,7 @@ from app.schemas import (
     CountryFind,
 )
 
-from app.tests.test_data import satellite_test_date, satellite_characteristic_test_date
+from tests.test_data import satellite_test_date, satellite_characteristic_test_date
 
 satellite_complete_data = [
     (sat_data, sat_characteristic)

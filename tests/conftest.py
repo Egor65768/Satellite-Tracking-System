@@ -28,6 +28,5 @@ async def db_session(engine):
         engine, expire_on_commit=False, autocommit=False
     )
     async with async_session_maker() as session:
-        # async with session.begin():
         yield session
         await session.rollback()

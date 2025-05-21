@@ -7,6 +7,17 @@ from app.schemas import CountryInDB, CountryCreate, PaginationBase, CountryUpdat
 
 router = APIRouter()
 
+CountryID = Annotated[int, Path(title="The ID of the country")]
+Abbreviation = Annotated[
+    str,
+    Query(
+        min_length=1,
+        max_length=10,
+        examples=["CA", "RU", "US"],
+        description="Filter by country abbreviation",
+    ),
+]
+
 
 @router.get(
     "/id/{country_id}",
@@ -19,7 +30,7 @@ router = APIRouter()
     },
 )
 async def get_country_by_id(
-    country_id: Annotated[int, Path(title="The ID of the country")],
+    country_id: CountryID,
     db: AsyncSession = Depends(get_db),
 ) -> CountryInDB:
     country_service = create_country_service(db)
@@ -42,15 +53,7 @@ async def get_country_by_id(
     },
 )
 async def get_country_by_abbreviation(
-    abbreviation: Annotated[
-        str,
-        Query(
-            min_length=1,
-            max_length=10,
-            example="CA",
-            description="Filter by country abbreviation",
-        ),
-    ],
+    abbreviation: Abbreviation,
     db: AsyncSession = Depends(get_db),
 ) -> CountryInDB:
     country_service = create_country_service(db)
@@ -97,7 +100,7 @@ async def create_country(
     },
 )
 async def delete_by_id(
-    country_id: Annotated[int, Path(title="The ID of the country")],
+    country_id: CountryID,
     db: AsyncSession = Depends(get_db),
 ):
     country_service = create_country_service(db)
@@ -144,7 +147,7 @@ async def get_countries(
 )
 async def update_country(
     country_update: CountryUpdate,
-    country_id: Annotated[int, Path(title="The ID of the country")],
+    country_id: CountryID,
     db: AsyncSession = Depends(get_db),
 ) -> CountryInDB:
     country_service = create_country_service(db)

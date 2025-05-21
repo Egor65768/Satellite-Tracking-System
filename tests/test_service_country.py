@@ -1,5 +1,5 @@
 import pytest
-from app.tests.test_data import (
+from tests.test_data import (
     country_test_data,
     country_test_data_invalid,
 )
@@ -74,11 +74,12 @@ class TestUpdate:
             assert country.abbreviation == "UA"
             assert country.id == 1
             assert country.full_name == country_data.get("full_name")
-
+        async with db_session.begin():
             update_data = {"full_name": "Никорагуа"}
             await country_service.update_country(
                 country_id, CountryUpdate(**update_data)
             )
+        async with db_session.begin():
             country = await country_service.get_by_abbreviation("UA")
             assert country is not None
             assert country.abbreviation == "UA"
@@ -114,7 +115,9 @@ class TestDelete:
         async with db_session.begin():
             country_list = await country_service.get_countries(PaginationBase())
             assert len(country_list) == 5
-            for country in country_list:
+        for country in country_list:
+            async with db_session.begin():
                 assert await country_service.delete_country(country.id)
+        async with db_session.begin():
             country_list = await country_service.get_countries(PaginationBase())
             assert len(country_list) == 0

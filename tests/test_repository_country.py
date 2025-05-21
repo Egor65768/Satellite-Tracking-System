@@ -8,7 +8,7 @@ from app.schemas import (
     CountryUpdate,
 )
 from sqlalchemy.exc import InvalidRequestError
-from app.tests.test_data import (
+from tests.test_data import (
     country_test_data,
     country_test_get,
     country_test_data_invalid,

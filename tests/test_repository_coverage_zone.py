@@ -26,18 +26,18 @@ from app.schemas import (
     SatelliteCreate,
 )
 
-from app.tests.test_repository_satellite import satellite_test_date
+from tests.test_repository_satellite import satellite_test_date
 
 test_create_data = [
     {
         "id": "2021-12bd-23730",
         "transmitter_type": "Ku-Band",
-        "image": "app/tests/test/test1.jpg",
+        "image": "tests/test/test1.jpg",
     },
     {
         "id": "2001-1234-24670",
         "transmitter_type": "Ku-Band",
-        "image": "app/tests/test/test2.jpg",
+        "image": "tests/test/test2.jpg",
     },
 ]
 
