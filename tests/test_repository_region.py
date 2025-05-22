@@ -74,7 +74,7 @@ class TestCreate:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("region_data", region_invalid_data)
-    async def test_create_region_invalid(self, db_session, region_data):
+    async def test_create_region_invalid_1(self, db_session, region_data):
         repo_region = RegionRepository(db_session)
         async with db_session.begin():
             region_db = await repo_region.create_entity(RegionCreate(**region_data))
@@ -84,7 +84,7 @@ class TestCreate:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("subregion_data", subregion_invalid_data)
-    async def test_create_region_invalid(self, db_session, subregion_data):
+    async def test_create_region_invalid_2(self, db_session, subregion_data):
         repo_subregion = SubregionRepository(db_session)
         async with db_session.begin():
             subregion_db = await repo_subregion.create_entity(

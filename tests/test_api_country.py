@@ -78,6 +78,45 @@ class TestCountryAPI:
         assert country.abbreviation == country_data["abbreviation"]
 
     @pytest.mark.asyncio
+    async def test_create_invalid(self):
+        country_data = country_test_data[0]
+        create_response = await self.client.post("/country/", json=country_data)
+        assert create_response.status_code == 409
+
+    @pytest.mark.asyncio
+    async def test_update(self):
+        country_data = {"abbreviation": "CAM"}
+        response = await self.client.put("/country/1", json=country_data)
+        assert response.status_code == 200
+
+        get_response = await self.client.get(f"/country/id/1")
+        assert get_response.status_code == 200
+        country = CountryInDB(**get_response.json())
+        assert country.abbreviation == country_data["abbreviation"]
+
+        country_data = {"abbreviation": "IRL", "full_name": "Irland"}
+        response = await self.client.put("/country/1", json=country_data)
+        assert response.status_code == 200
+
+        get_response = await self.client.get(f"/country/id/1")
+        assert get_response.status_code == 200
+        country = CountryInDB(**get_response.json())
+        assert country.abbreviation == country_data["abbreviation"]
+        assert country.full_name == country_data["full_name"]
+
+        country_data = {"abbreviation": "IRL", "full_name": "Irland"}
+        response = await self.client.put("/country/15", json=country_data)
+        assert response.status_code == 404
+
+        country_data = {"abbreviation": "RU"}
+        response = await self.client.put("/country/1", json=country_data)
+        assert response.status_code == 409
+
+        country_data = {"full_name": "Россия"}
+        response = await self.client.put("/country/1", json=country_data)
+        assert response.status_code == 409
+
+    @pytest.mark.asyncio
     async def test_delete_country(self):
         create_response = await self.client.get("/country/list/")
         assert create_response.status_code == 200
@@ -93,20 +132,6 @@ class TestCountryAPI:
         assert len(country_list) == 0
 
 
-# @pytest.mark.asyncio
-# async def test_get_country_by_abbreviation(db: AsyncSession, test_country_data: dict):
-#     # Тест получения страны по аббревиатуре
-#     # Создаем страну
-#     create_response = client.post("/countries/", json=test_country_data)
-#     assert create_response.status_code == 200
-#
-#     # Получаем страну по аббревиатуре
-#     get_response = client.get(f"/countries/abbreviation/?abbreviation={test_country_data['abbreviation']}")
-#     assert get_response.status_code == 200
-#     country = CountryInDB(**get_response.json())
-#
-#     # Проверяем данные
-#     assert country.abbreviation == test_country_data["abbreviation"]
 #
 #
 # @pytest.mark.asyncio
