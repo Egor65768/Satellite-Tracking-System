@@ -19,12 +19,27 @@ class CountryService:
     def __init__(self, repository: CountryRepository):
         self.repository = repository
 
-    async def get_by_abbreviation(self, abbreviation: str) -> Optional[CountryInDB]:
+    @staticmethod
+    async def _get_validated_abbreviation(abbreviation: str) -> Optional[CountryFind]:
         try:
-            abbreviation = CountryFind(abbreviation=abbreviation)
+            return CountryFind(abbreviation=abbreviation)
         except ValidationError:
             return None
-        return await self.repository.get_by_abbreviation(abbreviation)
+
+    @staticmethod
+    async def _get_validated_object_id(country_id: int) -> Optional[Object_ID]:
+        try:
+            return Object_ID(id=country_id)
+        except ValidationError:
+            return None
+
+    async def get_by_abbreviation(self, abbreviation: str) -> Optional[CountryInDB]:
+        abbreviation = await self._get_validated_abbreviation(abbreviation)
+        return (
+            await self.repository.get_by_abbreviation(abbreviation)
+            if abbreviation
+            else None
+        )
 
     async def create_country(
         self, country_data: CountryCreate
@@ -35,10 +50,8 @@ class CountryService:
         return country
 
     async def delete_country(self, country_id: int) -> bool:
-        try:
-            object_id = Object_ID(id=country_id)
-        except ValidationError:
-            print("ZZZZZZZZZ")
+        object_id = await self._get_validated_object_id(country_id)
+        if not object_id:
             return False
         res = await self.repository.delete_model(object_id)
         if res:
@@ -48,9 +61,8 @@ class CountryService:
     async def update_country(
         self, country_id: int, country_data_update: CountryUpdate
     ) -> Optional[CountryInDB]:
-        try:
-            country_id = Object_ID(id=country_id)
-        except ValidationError:
+        country_id = await self._get_validated_object_id(country_id)
+        if not country_id:
             return None
         country = await self.repository.update_model(country_id, country_data_update)
         if country is not None:
