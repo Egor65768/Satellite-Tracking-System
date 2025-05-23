@@ -9,6 +9,7 @@ from app.schemas import (
     SatelliteCharacteristicInDB,
     SatelliteCreate,
     SatelliteCharacteristicCreate,
+    PaginationBase,
 )
 
 if TYPE_CHECKING:
@@ -32,11 +33,10 @@ class SatelliteService:
             return None
 
     async def get_satellite_by_id(self, satellite_id: str) -> Optional[SatelliteInDB]:
-        international_code = await self._get_validated_code(satellite_id)
-        return (
-            await self.repository.get_as_model(international_code)
-            if international_code
-            else None
+        if not await self._get_validated_code(satellite_id):
+            return None
+        return await self.repository.get_by_field(
+            field_name="international_code", field_value=satellite_id
         )
 
     async def get_satellite_complete_info(
@@ -52,12 +52,14 @@ class SatelliteService:
     async def get_satellite_characteristics(
         self, satellite_id: str
     ) -> Optional[SatelliteCharacteristicInDB]:
-        international_code = await self._get_validated_code(satellite_id)
-        return (
-            await self.characteristic_repository.get_as_model(international_code)
-            if international_code
-            else None
+        if not await self._get_validated_code(satellite_id):
+            return None
+        return await self.characteristic_repository.get_by_field(
+            field_name="international_code", field_value=satellite_id
         )
+
+    async def get_satellites(self, pagination: PaginationBase) -> List[SatelliteInDB]:
+        return await self.repository.get_models(pagination)
 
     async def create_satellite_base(
         self, satellite_data: SatelliteCreate

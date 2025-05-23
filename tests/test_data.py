@@ -77,3 +77,17 @@ satellite_characteristic_test_date = [
         "details": "nfhehdlhvefoihouefhouhofd",
     },
 ]
+
+satellite_characteristic_test_date_1 = {
+    "international_code": "321_B_123_A",
+    "longitude": 143.1,
+    "period": 1521.1,
+    "launch_site": "Байконур",
+    "rocket": "Союз 2.1",
+    "launch_mass": 126237.3,
+    "manufacturer": "Роскосмос",
+    "model": "11kk4224",
+    "expected_lifetime": 18,
+    "remaining_lifetime": 2,
+    "details": "nfhehdloevasdvsdjkdsjdsouefhouhofd",
+}

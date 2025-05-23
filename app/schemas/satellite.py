@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 
@@ -7,12 +7,32 @@ class SatelliteBase(BaseModel):
     """Базовая схема спутника"""
 
     international_code: str = Field(
-        ..., max_length=50, description="Международный код спутника"
+        ...,
+        max_length=50,
+        description="Международный код спутника",
+        json_schema_extra={"example": "2002-007A"},
     )
-    name_satellite: str = Field(..., max_length=100, description="Название спутника")
-    norad_id: int = Field(..., description="NORAD ID спутника")
-    launch_date: date = Field(..., description="Дата запуска")
-    country_id: int = Field(..., description="ID страны")
+    name_satellite: str = Field(
+        ...,
+        max_length=100,
+        description="Название спутника",
+        json_schema_extra={"example": "Yamal-401"},
+    )
+    norad_id: int = Field(
+        ..., description="NORAD ID спутника", json_schema_extra={"example": 56756}
+    )
+    launch_date: date = Field(
+        ...,
+        description="Дата запуска",
+        json_schema_extra={
+            "example": "2002-12-7",
+            "start_date": "1957-10-04",  # Дата запуска Спутника-1
+            "end_date": datetime.now().date().isoformat(),
+        },
+    )
+    country_id: int = Field(
+        ..., description="ID страны", json_schema_extra={"example": "1"}
+    )
 
 
 class SatelliteCreate(SatelliteBase):
@@ -31,24 +51,60 @@ class SatelliteCharacteristicBase(BaseModel):
     """Базовая схема характеристик спутника"""
 
     longitude: Optional[float] = Field(
-        None, ge=-180, le=180, description="Долгота орбиты в градусах (-180 до 180)"
+        None,
+        ge=-180,
+        le=180,
+        description="Долгота орбиты в градусах (-180 до 180)",
+        json_schema_extra={"example": 171.1},
     )
     period: Optional[float] = Field(
-        None, gt=0, description="Период обращения в минутах"
+        None,
+        gt=0,
+        description="Период обращения в минутах",
+        json_schema_extra={"example": 1171.2},
     )
-    launch_site: str = Field(..., max_length=100, description="Место запуска")
-    rocket: str = Field(..., max_length=50, description="Ракета-носитель")
+    launch_site: str = Field(
+        ...,
+        max_length=100,
+        description="Место запуска",
+        json_schema_extra={"example": "Cape Canaveral"},
+    )
+    rocket: str = Field(
+        ...,
+        max_length=50,
+        description="Ракета-носитель",
+        json_schema_extra={"example": "Falcon 9"},
+    )
     launch_mass: Optional[float] = Field(
-        None, gt=0, description="Масса при запуске в кг"
+        None,
+        gt=0,
+        description="Масса при запуске в кг",
+        json_schema_extra={"example": 1223435.1},
     )
-    manufacturer: str = Field(..., max_length=100, description="Производитель")
+    manufacturer: str = Field(
+        ...,
+        max_length=100,
+        description="Производитель",
+        json_schema_extra={"example": "SpaceX"},
+    )
     model: str = Field(..., max_length=50, description="Модель спутника")
     expected_lifetime: int = Field(
-        ..., gt=0, description="Ожидаемый срок службы в месяцах"
+        ...,
+        gt=0,
+        description="Ожидаемый срок службы в годах",
+        json_schema_extra={"example": "A2100A"},
     )
-    remaining_lifetime: int = Field(..., description="Оставшийся срок службы в месяцах")
+    remaining_lifetime: int = Field(
+        ...,
+        description="Оставшийся срок службы в годах",
+        json_schema_extra={"example": 5},
+    )
     details: Optional[str] = Field(
-        None, description="Дополнительные технические характеристики"
+        None,
+        description="Дополнительные технические характеристики",
+        json_schema_extra={
+            "example": "24 Ku- and 24 C-band to provide broadcasting, business, cable services to CONUS, Hawaii, Caribbean and southern Canada"
+        },
     )
 
 
