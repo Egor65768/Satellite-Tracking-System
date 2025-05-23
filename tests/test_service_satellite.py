@@ -214,10 +214,13 @@ class TestDelete:
         service = create_satellite_service(db_session)
         async with db_session.begin():
             assert len(await service.get_satellites(PaginationBase())) == 0
+            assert (
+                len(await service.get_satellites_characteristic(PaginationBase())) == 0
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("country_data", country_test_data)
-    async def test_create_country(self, db_session, country_data):
+    async def test_delete_country(self, db_session, country_data):
         service = create_country_service(db_session)
         async with db_session.begin():
             country_abbreviation = country_data.get("abbreviation")

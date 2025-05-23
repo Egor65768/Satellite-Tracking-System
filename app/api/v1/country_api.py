@@ -4,6 +4,7 @@ from app.core import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.service import create_country_service
 from app.schemas import CountryInDB, CountryCreate, PaginationBase, CountryUpdate
+from app.api.v1.helpers import raise_if_object_none
 
 router = APIRouter()
 
@@ -35,10 +36,7 @@ async def get_country_by_id(
 ) -> CountryInDB:
     country_service = create_country_service(db)
     country = await country_service.get_country(country_id)
-    if country is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
-        )
+    await raise_if_object_none(country, status.HTTP_404_NOT_FOUND, "Country not found")
     return country
 
 
@@ -58,10 +56,7 @@ async def get_country_by_abbreviation(
 ) -> CountryInDB:
     country_service = create_country_service(db)
     country = await country_service.get_by_abbreviation(abbreviation)
-    if country is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
-        )
+    await raise_if_object_none(country, status.HTTP_404_NOT_FOUND, "Country not found")
     return country
 
 
@@ -81,11 +76,9 @@ async def create_country(
 ) -> CountryInDB:
     country_service = create_country_service(db)
     country = await country_service.create_country(country_create)
-    if country is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A country with such data cannot be created",
-        )
+    await raise_if_object_none(
+        country, status.HTTP_409_CONFLICT, "A country with such data cannot be created"
+    )
     return country
 
 
@@ -105,10 +98,7 @@ async def delete_by_id(
 ):
     country_service = create_country_service(db)
     country = await country_service.delete_country(country_id)
-    if not country:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
-        )
+    await raise_if_object_none(country, status.HTTP_404_NOT_FOUND, "Country not found")
     return None
 
 
@@ -156,9 +146,7 @@ async def update_country(
             status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
         )
     country = await country_service.update_country(country_id, country_update)
-    if country is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A country with such data cannot be updated",
-        )
+    await raise_if_object_none(
+        country, status.HTTP_409_CONFLICT, "A country with such data cannot be updated"
+    )
     return country

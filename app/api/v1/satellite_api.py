@@ -1,10 +1,18 @@
 from fastapi import APIRouter, Path, Depends, status, HTTPException, Query
-from typing import Annotated
+from typing import Annotated, List, Optional
 from app.core import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.service import create_satellite_service
-from app.schemas import SatelliteInDB, SatelliteCharacteristicInDB
-from pydantic import Field
+from app.schemas import (
+    SatelliteInDB,
+    SatelliteCharacteristicInDB,
+    SatelliteCompleteInfo,
+    PaginationBase,
+    SatelliteCreate,
+    SatelliteCharacteristicCreate,
+)
+from pydantic import Field, BaseModel
+from app.api.v1.helpers import raise_if_object_none
 
 router = APIRouter()
 
@@ -15,12 +23,26 @@ InternationalCode = Annotated[
         description="Unique international designator (e.g. '1999-025A')",
         examples=["1999-025A", "2023-123B"],
     ),
-    Field(max_length=20),  # Максимальная длина 20 символов
+    Field(max_length=20),
 ]
+
+detail_fail_create = "A satellite with such data cannot be created.Check that the foreign key for a country with such an id exists or that a satellite with such data already exists"
+
+
+async def check_satellite(satellite: BaseModel, detail: Optional[str] = None):
+    if detail is None:
+        detail = (
+            "A satellite with such data cannot be created.Check that the foreign key for a country with such an id exists or that a satellite with such data already exists",
+        )
+    if satellite is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail,
+        )
 
 
 @router.get(
-    "/international_code/{international_code}",
+    "/{international_code}",
     response_model=SatelliteInDB,
     summary="Get satellite by international code",
     description="Retrieves a satellite information by its unique international code",
@@ -43,7 +65,7 @@ async def get_satellite_by_international_code(
 
 
 @router.get(
-    "/characteristic/{international_code}",
+    "/{international_code}/characteristics",
     response_model=SatelliteCharacteristicInDB,
     summary="Get satellite characteristic by international code",
     description="Retrieves a satellite characteristic by its unique international code",
@@ -69,3 +91,162 @@ async def get_satellite_characteristic_by_international_code(
             detail="Satellite characteristic not found",
         )
     return satellite_characteristic
+
+
+@router.get(
+    "/{international_code}/complete",
+    response_model=SatelliteCompleteInfo,
+    summary="Get satellite complete information by international code",
+    description="Retrieves a satellite characteristic and information by its unique international code",
+    responses={
+        404: {"description": "Satellite complete information not found"},
+        200: {
+            "description": "Satellite complete information found",
+            "model": SatelliteCompleteInfo,
+        },
+    },
+)
+async def get_satellite_complete_information_by_international_code(
+    international_code: InternationalCode,
+    db: AsyncSession = Depends(get_db),
+) -> SatelliteCompleteInfo:
+    satellite_service = create_satellite_service(db)
+    satellite_complete_info = await satellite_service.get_satellite_complete_info(
+        international_code
+    )
+    if satellite_complete_info is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Satellite complete information not found",
+        )
+    return satellite_complete_info
+
+
+@router.get(
+    "/list/",
+    response_model=List[SatelliteInDB],
+    summary="Get a list of satellites",
+    responses={
+        200: {"description": "Satellites list", "model": List[SatelliteInDB]},
+    },
+)
+async def get_satellites(
+    db: AsyncSession = Depends(get_db),
+    limit: Annotated[int, Query(ge=1)] = 10,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> List[SatelliteInDB]:
+    satellite_service = create_satellite_service(db)
+    return await satellite_service.get_satellites(
+        PaginationBase(limit=limit, offset=offset)
+    )
+
+
+@router.post(
+    path="/",
+    response_model=SatelliteInDB,
+    summary="Create satellite",
+    description="Returns the satellite if created successfully",
+    responses={
+        409: {"description": "Satellite has not been created"},
+        200: {"description": "Satellite create", "model": SatelliteInDB},
+    },
+)
+async def create_satellite(
+    satellite_create: SatelliteCreate,
+    db: AsyncSession = Depends(get_db),
+) -> SatelliteInDB:
+    satellite_service = create_satellite_service(db)
+    satellite = await satellite_service.create_satellite_base(satellite_create)
+    await raise_if_object_none(satellite, status.HTTP_409_CONFLICT, detail_fail_create)
+    return satellite
+
+
+@router.post(
+    path="/complete",
+    response_model=SatelliteCompleteInfo,
+    summary="Create satellite complete",
+    description="Returns the satellite complete information if created successfully",
+    responses={
+        409: {"description": "Satellite has not been created"},
+        200: {"description": "Satellite create", "model": SatelliteCompleteInfo},
+    },
+)
+async def create_satellite_complete(
+    satellite_create: SatelliteCreate,
+    satellite_characteristic: SatelliteCharacteristicCreate,
+    db: AsyncSession = Depends(get_db),
+) -> SatelliteCompleteInfo:
+    satellite_service = create_satellite_service(db)
+    satellite = await satellite_service.create_full_satellite(
+        satellite_create, satellite_characteristic
+    )
+    await raise_if_object_none(satellite, status.HTTP_409_CONFLICT, detail_fail_create)
+    return satellite
+
+
+@router.post(
+    path="/characteristic",
+    response_model=SatelliteCharacteristicInDB,
+    summary="Create satellite characteristic",
+    description="Returns the satellite characteristic if created successfully",
+    responses={
+        409: {"description": "Satellite characteristic has not been created"},
+        200: {
+            "description": "Satellite characteristic create",
+            "model": SatelliteCharacteristicInDB,
+        },
+    },
+)
+async def create_satellite_characteristic(
+    satellite_characteristic: SatelliteCharacteristicCreate,
+    db: AsyncSession = Depends(get_db),
+) -> SatelliteCharacteristicInDB:
+    satellite_service = create_satellite_service(db)
+    satellite_characteristic = await satellite_service.create_satellite_characteristic(
+        satellite_characteristic
+    )
+    detail = "A satellite characteristics with such data cannot be created"
+    await raise_if_object_none(
+        satellite_characteristic, status.HTTP_409_CONFLICT, detail
+    )
+    return satellite_characteristic
+
+
+@router.delete(
+    path="/characteristic/{international_code}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete satellite characteristic by international code",
+    responses={
+        404: {"description": "Satellite characteristic not found"},
+        204: {
+            "description": "Satellite characteristic was successfully deleted, no content returned"
+        },
+    },
+)
+async def delete_satellite_characteristic_by_international_code(
+    international_code: InternationalCode, db: AsyncSession = Depends(get_db)
+):
+    satellite_service = create_satellite_service(db)
+    res = await satellite_service.delete_characteristic(international_code)
+    detail = "Satellite characteristic not found"
+    await raise_if_object_none(res, status.HTTP_404_NOT_FOUND, detail)
+    return None
+
+
+@router.delete(
+    path="/{international_code}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete satellite by international code",
+    responses={
+        404: {"description": "Satellite not found"},
+        204: {"description": "Satellite was successfully deleted, no content returned"},
+    },
+)
+async def delete_satellite_by_international_code(
+    international_code: InternationalCode, db: AsyncSession = Depends(get_db)
+):
+    satellite_service = create_satellite_service(db)
+    res = await satellite_service.delete_satellite(international_code)
+    detail = "Satellite not found"
+    await raise_if_object_none(res, status.HTTP_404_NOT_FOUND, detail)
+    return None

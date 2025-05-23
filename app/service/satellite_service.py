@@ -61,6 +61,11 @@ class SatelliteService:
     async def get_satellites(self, pagination: PaginationBase) -> List[SatelliteInDB]:
         return await self.repository.get_models(pagination)
 
+    async def get_satellites_characteristic(
+        self, pagination: PaginationBase
+    ) -> List[SatelliteCharacteristicInDB]:
+        return await self.characteristic_repository.get_models(pagination)
+
     async def create_satellite_base(
         self, satellite_data: SatelliteCreate
     ) -> Optional[SatelliteInDB]:
