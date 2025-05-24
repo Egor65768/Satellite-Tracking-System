@@ -24,6 +24,9 @@ from .satellite import (
     SatelliteCharacteristicInDB,
     SatelliteCharacteristicCreate,
     SatelliteCompleteInfo,
+    SatelliteUpdate,
+    SatelliteCharacteristicUpdate,
+    SatelliteCompleteUpdate,
 )
 
 __all__ = [
@@ -51,4 +54,7 @@ __all__ = [
     "SatelliteCharacteristicInDB",
     "SatelliteCharacteristicCreate",
     "SatelliteCompleteInfo",
+    "SatelliteUpdate",
+    "SatelliteCharacteristicUpdate",
+    "SatelliteCompleteUpdate",
 ]

@@ -7,13 +7,34 @@ from app.schemas import (
     SatelliteCharacteristicInDB,
     SatelliteCharacteristicCreate,
     SatelliteCompleteInfo,
+    SatelliteUpdate,
+    SatelliteCharacteristicUpdate,
 )
 from typing import Optional
 from app.schemas import Object_str_ID
-from sqlalchemy import select, delete, Column
+from sqlalchemy import select, delete, Column, update
 from typing import Type, TypeVar, cast
+from sqlalchemy.exc import SQLAlchemyError
+
 
 T = TypeVar("T", bound="Base")
+
+
+async def update_model_by_international_code(
+    session: AsyncSession, model_object: Type[T], object_id: str, **kwargs
+) -> bool:
+    try:
+        update_values = {k: v for k, v in kwargs.items() if v is not None}
+        if not update_values:
+            return True
+        id_column = cast(Column, model_object.international_code)
+        query = update(model_object).where(id_column == object_id).values(update_values)
+        await session.execute(query)
+        return True
+    except SQLAlchemyError:
+        if session.in_transaction():
+            await session.rollback()
+        return False
 
 
 async def delete_model_by_international_code(
@@ -36,11 +57,38 @@ class SatelliteCharacteristicRepository(BaseRepository[SatelliteCharacteristic])
             self.session, object_id, SatelliteCharacteristic
         )
 
+    async def update_characteristic_satellite(
+        self,
+        object_id: Object_str_ID,
+        update_satellite_characteristic: SatelliteCharacteristicUpdate,
+    ) -> Optional[SatelliteInDB]:
+        if not await update_model_by_international_code(
+            self.session,
+            SatelliteCharacteristic,
+            object_id.id,
+            **update_satellite_characteristic.model_dump()
+        ):
+            return None
+        return await self.get_by_field(
+            field_name="international_code", field_value=object_id.id
+        )
+
 
 class SatelliteRepository(BaseRepository[Satellite]):
     def __init__(self, session: AsyncSession):
         super().__init__(Satellite, session)
         self.in_db_type = SatelliteInDB
+
+    async def update_satellite(
+        self, object_id: Object_str_ID, update_satellite: SatelliteUpdate
+    ) -> Optional[SatelliteInDB]:
+        if not await update_model_by_international_code(
+            self.session, Satellite, object_id.id, **update_satellite.model_dump()
+        ):
+            return None
+        return await self.get_by_field(
+            field_name="international_code", field_value=object_id.id
+        )
 
     async def delete_model(self, object_id: Object_str_ID) -> bool:
         await delete_model_by_international_code(

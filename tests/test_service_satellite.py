@@ -11,6 +11,8 @@ from app.schemas import (
     CountryCreate,
     SatelliteCreate,
     SatelliteCharacteristicCreate,
+    SatelliteUpdate,
+    SatelliteCharacteristicUpdate,
 )
 
 
@@ -194,6 +196,67 @@ class TestCreateFull:
             assert sat_data.model == sat_char.get("model")
 
 
+class TestUpdate:
+    @pytest.mark.asyncio
+    async def test_update_satellite_1(self, db_session):
+        service = create_satellite_service(db_session)
+        satellite_1 = satellite_test_date[0]
+        international_code_1 = satellite_1.get("international_code")
+        async with db_session.begin():
+            sat_1 = await service.get_satellite_by_id(international_code_1)
+            assert sat_1
+            assert sat_1.name_satellite == satellite_1.get("name_satellite")
+            assert sat_1.norad_id == satellite_1.get("norad_id")
+            update_data = {"name_satellite": "Viking 1"}
+            assert await service.update_satellite(
+                international_code_1, SatelliteUpdate(**update_data)
+            )
+            sat_1 = await service.get_satellite_by_id(international_code_1)
+            assert sat_1
+            assert sat_1.name_satellite == update_data.get("name_satellite")
+            assert sat_1.norad_id == satellite_1.get("norad_id")
+
+        async with db_session.begin():
+            international_code_2 = satellite_test_date[1].get("international_code")
+            assert not await service.update_satellite(
+                international_code_2, SatelliteUpdate(**update_data)
+            )
+
+        async with db_session.begin():
+            sat_1 = await service.get_satellite_by_id(international_code_1)
+            assert sat_1
+            assert sat_1.name_satellite == update_data.get("name_satellite")
+            assert sat_1.norad_id == satellite_1.get("norad_id")
+
+            sat_2 = await service.get_satellite_by_id(international_code_2)
+            assert sat_2
+            assert sat_2.name_satellite == satellite_test_date[1].get("name_satellite")
+
+    @pytest.mark.asyncio
+    async def test_update_satellite_2(self, db_session):
+        service = create_satellite_service(db_session)
+        sat_char = satellite_characteristic_test_date[0]
+        international_code = sat_char.get("international_code")
+        async with db_session.begin():
+            sat_char_db = await service.get_satellite_characteristics(
+                international_code
+            )
+            assert sat_char_db
+            assert sat_char_db.manufacturer == sat_char.get("manufacturer")
+            assert sat_char_db.model == sat_char.get("model")
+            update_data = {"model": "1hh3i1 c1xdsgb f"}
+            assert await service.update_satellite_characteristic(
+                international_code, SatelliteCharacteristicUpdate(**update_data)
+            )
+
+            sat_char_db = await service.get_satellite_characteristics(
+                international_code
+            )
+            assert sat_char_db
+            assert sat_char_db.manufacturer == sat_char.get("manufacturer")
+            assert sat_char_db.model == update_data.get("model")
+
+
 class TestDelete:
     @pytest.mark.asyncio
     async def test_check_satellite_1(self, db_session):
@@ -215,7 +278,8 @@ class TestDelete:
         async with db_session.begin():
             assert len(await service.get_satellites(PaginationBase())) == 0
             assert (
-                len(await service.get_satellites_characteristic(PaginationBase())) == 0
+                len(await service.get_satellites_characteristics_list(PaginationBase()))
+                == 0
             )
 
     @pytest.mark.asyncio

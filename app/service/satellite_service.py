@@ -10,6 +10,8 @@ from app.schemas import (
     SatelliteCreate,
     SatelliteCharacteristicCreate,
     PaginationBase,
+    SatelliteUpdate,
+    SatelliteCharacteristicUpdate,
 )
 
 if TYPE_CHECKING:
@@ -61,7 +63,7 @@ class SatelliteService:
     async def get_satellites(self, pagination: PaginationBase) -> List[SatelliteInDB]:
         return await self.repository.get_models(pagination)
 
-    async def get_satellites_characteristic(
+    async def get_satellites_characteristics_list(
         self, pagination: PaginationBase
     ) -> List[SatelliteCharacteristicInDB]:
         return await self.characteristic_repository.get_models(pagination)
@@ -92,3 +94,21 @@ class SatelliteService:
     async def delete_satellite(self, satellite_id: str) -> bool:
         international_code = await self._get_validated_code(satellite_id)
         return await self.repository.delete_model(international_code)
+
+    async def update_satellite(
+        self, satellite_id: str, satellite_update_data: SatelliteUpdate
+    ) -> Optional[SatelliteInDB]:
+        international_code = await self._get_validated_code(satellite_id)
+        return await self.repository.update_satellite(
+            international_code, satellite_update_data
+        )
+
+    async def update_satellite_characteristic(
+        self,
+        satellite_id: str,
+        satellite_characteristic_update_data: SatelliteCharacteristicUpdate,
+    ) -> Optional[SatelliteCharacteristicInDB]:
+        international_code = await self._get_validated_code(satellite_id)
+        return await self.characteristic_repository.update_characteristic_satellite(
+            international_code, satellite_characteristic_update_data
+        )

@@ -16,6 +16,10 @@ from app.schemas import (
     SatelliteCharacteristicCreate,
     SatelliteCompleteInfo,
     CountryFind,
+    SatelliteUpdate,
+    SatelliteCharacteristicUpdate,
+    SatelliteCharacteristicInDB,
+    SatelliteInDB,
 )
 
 from tests.test_data import satellite_test_date, satellite_characteristic_test_date
@@ -144,6 +148,75 @@ class TestCreateComplete:
             assert satellite_info.international_code == "123_A_123_A"
             assert satellite_info.launch_mass == satellite_characteristic.launch_mass
             assert satellite_info.norad_id == satellite_data.norad_id
+
+
+class TestUpdate:
+
+    @pytest.mark.asyncio
+    async def test_update_satellite(self, db_session):
+        repo_sat = SatelliteRepository(db_session)
+        international_code = "123_A_123_A"
+        sat_data = satellite_test_date[0]
+        async with db_session.begin():
+            object_id = Object_str_ID(id=international_code)
+            sat = await repo_sat.get_by_field(
+                field_name="international_code", field_value="123_A_123_A"
+            )
+            assert sat is not None
+            assert sat.name_satellite == sat_data.get("name_satellite")
+            assert sat.norad_id == sat_data.get("norad_id")
+            assert sat.launch_date == sat_data.get("launch_date")
+            update_data = {"norad_id": 1234, "name_satellite": "test_name"}
+            assert await repo_sat.update_satellite(
+                object_id=object_id, update_satellite=SatelliteUpdate(**update_data)
+            )
+            sat = await repo_sat.get_by_field(
+                field_name="international_code", field_value="123_A_123_A"
+            )
+            assert sat.name_satellite == update_data.get("name_satellite")
+            assert sat.norad_id == update_data.get("norad_id")
+            assert sat.launch_date == sat_data.get("launch_date")
+            object_id = Object_str_ID(id="PAMPAM")
+            assert not await repo_sat.update_satellite(
+                object_id=object_id, update_satellite=SatelliteUpdate(**update_data)
+            )
+            update_data = {"norad_id": satellite_test_date[1].get("norad_id")}
+            assert not await repo_sat.update_satellite(
+                object_id=object_id, update_satellite=SatelliteUpdate(**update_data)
+            )
+        async with db_session.begin():
+            sat = await repo_sat.get_by_field(
+                field_name="international_code", field_value="123_A_123_A"
+            )
+            assert sat.norad_id == 1234
+
+    @pytest.mark.asyncio
+    async def test_update_satellite_characteristic(self, db_session):
+        repo_sat_char = SatelliteCharacteristicRepository(db_session)
+        international_code = "123_A_123_A"
+        object_id = Object_str_ID(id=international_code)
+        sat_data = satellite_characteristic_test_date[0]
+        async with db_session.begin():
+            sat_characteristic = await repo_sat_char.get_by_field(
+                field_name="international_code", field_value="123_A_123_A"
+            )
+            assert sat_characteristic
+            assert sat_characteristic.international_code == international_code
+            assert sat_characteristic.launch_site == sat_data.get("launch_site")
+            assert sat_characteristic.manufacturer == sat_data.get("manufacturer")
+            update_data = {"manufacturer": "New_manufacturer"}
+            assert await repo_sat_char.update_characteristic_satellite(
+                object_id, SatelliteCharacteristicUpdate(**update_data)
+            )
+
+            sat_characteristic = await repo_sat_char.get_by_field(
+                field_name="international_code", field_value="123_A_123_A"
+            )
+            assert sat_characteristic
+            assert sat_characteristic.international_code == international_code
+            assert sat_characteristic.launch_site == sat_data.get("launch_site")
+            assert sat_characteristic.manufacturer != sat_data.get("manufacturer")
+            assert sat_characteristic.manufacturer == update_data.get("manufacturer")
 
 
 @pytest.mark.asyncio

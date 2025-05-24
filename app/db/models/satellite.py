@@ -14,7 +14,9 @@ if TYPE_CHECKING:
 class Satellite(Base):
     __tablename__ = "satellites"
     international_code: Mapped[str] = mapped_column(String(50), primary_key=True)
-    name_satellite: Mapped[str] = mapped_column(String(100), nullable=False)
+    name_satellite: Mapped[str] = mapped_column(
+        String(100), nullable=False, unique=True
+    )
     norad_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
     launch_date: Mapped[date] = mapped_column(Date)
     country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable=False)
