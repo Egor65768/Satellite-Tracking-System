@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, ClassVar
 
@@ -26,8 +26,6 @@ class SatelliteBase(BaseModel):
         description="Дата запуска",
         json_schema_extra={
             "example": "2002-12-7",
-            "start_date": "1957-10-04",  # Дата запуска Спутника-1
-            "end_date": datetime.now().date().isoformat(),
         },
     )
     country_id: int = Field(
@@ -68,11 +66,7 @@ class SatelliteUpdate(SatelliteBase):
     launch_date: Optional[date] = Field(
         None,
         description="Дата запуска",
-        json_schema_extra={
-            "example": "2002-12-7",
-            "start_date": "1957-10-04",
-            "end_date": datetime.now().date().isoformat(),
-        },
+        json_schema_extra={"example": "2002-12-7"},
     )
     country_id: Optional[int] = Field(
         None, description="ID страны", json_schema_extra={"example": "1"}

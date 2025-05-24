@@ -18,9 +18,8 @@ from app.schemas import (
     CountryFind,
     SatelliteUpdate,
     SatelliteCharacteristicUpdate,
-    SatelliteCharacteristicInDB,
-    SatelliteInDB,
 )
+from datetime import date
 
 from tests.test_data import satellite_test_date, satellite_characteristic_test_date
 
@@ -92,9 +91,7 @@ class TestGet:
         repo_sat = SatelliteRepository(db_session)
         async with db_session.begin():
             int_code = Object_str_ID(id=satellite_date["international_code"])
-            sat_db_date: Optional[SatelliteCompleteInfo] = (
-                await repo_sat.get_complete_info(int_code)
-            )
+            sat_db_date = await repo_sat.get_complete_info(int_code)
             dict_sat_data = sat_db_date.model_dump()
             for key, value in dict_sat_data.items():
                 test_value = (

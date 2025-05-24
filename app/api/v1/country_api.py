@@ -141,10 +141,12 @@ async def update_country(
     db: AsyncSession = Depends(get_db),
 ) -> CountryInDB:
     country_service = create_country_service(db)
-    if await country_service.get_country(country_id) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Country not found"
-        )
+    await raise_if_object_none(
+        await country_service.get_country(country_id),
+        status.HTTP_404_NOT_FOUND,
+        "Country not found",
+    )
+
     country = await country_service.update_country(country_id, country_update)
     await raise_if_object_none(
         country, status.HTTP_409_CONFLICT, "A country with such data cannot be updated"

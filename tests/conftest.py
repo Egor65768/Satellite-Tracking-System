@@ -2,6 +2,8 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.core import settings
 from app.db import Base
+from httpx import ASGITransport, AsyncClient
+from app.main import app
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -30,3 +32,11 @@ async def db_session(engine):
     async with async_session_maker() as session:
         yield session
         await session.rollback()
+
+
+@pytest_asyncio.fixture
+async def async_client():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        yield client
