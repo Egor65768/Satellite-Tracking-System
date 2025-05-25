@@ -51,10 +51,9 @@ async def get_satellite_by_international_code(
 ) -> SatelliteInDB:
     satellite_service = create_satellite_service(db)
     satellite = await satellite_service.get_satellite_by_id(international_code)
-    if satellite is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Satellite not found"
-        )
+    await raise_if_object_none(
+        satellite, status.HTTP_404_NOT_FOUND, "Satellite not found"
+    )
     return satellite
 
 
@@ -79,11 +78,11 @@ async def get_satellite_characteristic_by_international_code(
     satellite_characteristic = await satellite_service.get_satellite_characteristics(
         international_code
     )
-    if satellite_characteristic is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Satellite characteristic not found",
-        )
+    await raise_if_object_none(
+        satellite_characteristic,
+        status.HTTP_404_NOT_FOUND,
+        "Satellite characteristic not found",
+    )
     return satellite_characteristic
 
 
@@ -109,11 +108,11 @@ async def get_satellite_complete_information_by_international_code(
     satellite_complete_info = await satellite_service.get_satellite_complete_info(
         international_code
     )
-    if satellite_complete_info is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Satellite complete information not found",
-        )
+    await raise_if_object_none(
+        satellite_complete_info,
+        status.HTTP_404_NOT_FOUND,
+        "Satellite complete information not found",
+    )
     return satellite_complete_info
 
 
@@ -285,7 +284,7 @@ async def update_satellite(
         status.HTTP_409_CONFLICT,
         "A satellite with such data cannot be updated",
     )
-    # await db.commit()
+    await db.commit()
     return updated_satellite
 
 
@@ -328,5 +327,5 @@ async def update_satellite_characteristics(
         status.HTTP_409_CONFLICT,
         "A satellite with such data cannot be updated",
     )
-    # await db.commit()
+    await db.commit()
     return updated_satellite_characteristics
