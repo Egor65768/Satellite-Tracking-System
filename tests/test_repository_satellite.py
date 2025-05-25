@@ -14,12 +14,10 @@ from app.schemas import (
     CountryInDB,
     SatelliteCreate,
     SatelliteCharacteristicCreate,
-    SatelliteCompleteInfo,
     CountryFind,
     SatelliteUpdate,
     SatelliteCharacteristicUpdate,
 )
-from datetime import date
 
 from tests.test_data import satellite_test_date, satellite_characteristic_test_date
 
@@ -100,6 +98,23 @@ class TestGet:
                     else satellite_characteristic.get(key)
                 )
                 assert test_value == value
+
+    @pytest.mark.asyncio
+    async def test_get_satellite_from_country(self, db_session):
+        country_repo = CountryRepository(db_session)
+        async with db_session.begin():
+            country_db = await country_repo.get_by_abbreviation(
+                CountryFind(abbreviation="FA")
+            )
+            country_id = country_db.id
+            sat_list = await country_repo.get_satellite_list(Object_ID(id=country_id))
+            assert len(sat_list) == 2
+            for satellite in sat_list:
+                assert satellite.international_code in ["123_A_123_A", "321_B_123_A"]
+                assert satellite.country_id == country_db.id
+        async with db_session.begin():
+            sat_list = await country_repo.get_satellite_list(Object_ID(id=312434))
+            assert sat_list is None
 
 
 class TestDelete:
@@ -239,5 +254,6 @@ async def test_delete_country(db_session):
         country_list = await repo.get_models(PaginationBase())
         assert len(country_list) != 0
         for country in country_list:
+            assert len(await repo.get_satellite_list(Object_ID(id=country.id))) == 0
             assert await repo.delete_model(Object_ID(id=country.id))
         assert len(await repo.get_models(PaginationBase())) == 0

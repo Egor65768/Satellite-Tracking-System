@@ -6,6 +6,7 @@ from app.schemas import (
     CountryUpdate,
     Object_ID,
     PaginationBase,
+    SatelliteInDB,
 )
 from typing import Optional, List
 from typing import TYPE_CHECKING
@@ -74,3 +75,8 @@ class CountryService:
 
     async def get_country(self, country_id: int) -> Optional[CountryInDB]:
         return await self.repository.get_as_model(Object_ID(id=country_id))
+
+    async def get_satellites_by_country_id(
+        self, country_id: int
+    ) -> Optional[List[SatelliteInDB]]:
+        return await self.repository.get_satellite_list(Object_ID(id=country_id))

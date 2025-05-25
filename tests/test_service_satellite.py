@@ -259,6 +259,12 @@ class TestUpdate:
 
 class TestDelete:
     @pytest.mark.asyncio
+    async def test_check_country_count_satellite(self, db_session):
+        service = create_country_service(db_session)
+        async with db_session.begin():
+            assert len(await service.get_satellites_by_country_id(2)) == 2
+
+    @pytest.mark.asyncio
     async def test_check_satellite_1(self, db_session):
         service = create_satellite_service(db_session)
         async with db_session.begin():

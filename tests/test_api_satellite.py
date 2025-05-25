@@ -24,9 +24,7 @@ async def test_create_and_get_country_by_id(country_data, async_client):
 
 @pytest.mark.asyncio
 async def test_check_count_country_2(async_client):
-    assert len((await async_client.get("/country/list/")).json()) == len(
-        country_test_data
-    )
+    assert len((await async_client.get("/country/list/")).json()) == 3
 
 
 @pytest.mark.usefixtures("async_client")
@@ -67,6 +65,7 @@ class TestSatelliteAPI:
         assert sat_dat["name_satellite"] == satellite_data["name_satellite"]
         assert sat_dat["international_code"] == satellite_data["international_code"]
 
+    @pytest.mark.asyncio
     async def test_invalid_get_satellite(self):
         international_code = "NOOOO"
         response = await self.client.get(
@@ -74,11 +73,13 @@ class TestSatelliteAPI:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    @pytest.mark.asyncio
     async def test_get_nonexistent_satellite(self):
         # Тест получения несуществующего спутника
         response = await self.client.get("/satellite/NONEXISTENT-CODE")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    @pytest.mark.asyncio
     async def test_create_satellite_duplicate(self):
         # Тест создания дубликата спутника
         satellite_data = copy(satellite_test_date[1])
@@ -93,6 +94,7 @@ class TestSatelliteAPI:
         response2 = await self.client.post("/satellite/", json=satellite_data)
         assert response2.status_code == status.HTTP_409_CONFLICT
 
+    @pytest.mark.asyncio
     async def test_create_and_get_satellite_characteristics(self):
         # Тест создания и получения характеристик спутника
         # Сначала создаем спутник
@@ -143,6 +145,7 @@ class TestSatelliteAPI:
         assert characteristics["longitude"] == characteristics_data.longitude
         assert characteristics["rocket"] == characteristics_data.rocket
 
+    @pytest.mark.asyncio
     async def test_create_complete_satellite(self):
         # Тест создания спутника с полной информацией
         satellite_data = SatelliteCreate(
@@ -185,6 +188,7 @@ class TestSatelliteAPI:
         assert complete_data["international_code"] == satellite_data.international_code
         assert complete_data["rocket"] == characteristics_data.rocket
 
+    @pytest.mark.asyncio
     async def test_get_satellite_list(self):
         # Тест получения списка спутников
 
@@ -198,6 +202,7 @@ class TestSatelliteAPI:
         # Проверяем пагинацию
         assert len(satellites) == 3
 
+    @pytest.mark.asyncio
     async def test_get_satellite_list_2(self):
         # Тест получения списка спутников
 
@@ -221,6 +226,7 @@ class TestSatelliteAPI:
         # Проверяем пагинацию
         assert len(satellites) == 0
 
+    @pytest.mark.asyncio
     async def test_update_satellite(self):
         # Тест обновления данных спутника
         # Создаем спутник для обновления
@@ -268,6 +274,7 @@ class TestSatelliteAPI:
         assert satellite_update_data["norad_id"] == update_data_dict["norad_id"]
         assert satellite_update_data["country_id"] == satellite_data.country_id
 
+    @pytest.mark.asyncio
     async def test_update_satellite_characteristics(self):
 
         # Тест обновления характеристик спутника
@@ -326,6 +333,29 @@ class TestSatelliteAPI:
         assert satellite_data["rocket"] == satellite_test_characteristic.get("rocket")
 
     @pytest.mark.asyncio
+    async def test_get_satellite_list_by_country_id(self):
+        create_response = await self.client.get("country/id/1/satellite")
+        assert create_response.status_code == status.HTTP_200_OK
+        satellite_list = create_response.json()
+        assert len(satellite_list) != 0
+
+        create_response = await self.client.get("country/id/2/satellite")
+        assert create_response.status_code == status.HTTP_200_OK
+        satellite_list = create_response.json()
+        assert len(satellite_list) != 0
+
+        create_response = await self.client.get("country/id/3")
+        assert create_response.status_code == status.HTTP_200_OK
+
+        create_response = await self.client.get("country/id/3/satellite")
+        assert create_response.status_code == status.HTTP_200_OK
+        satellite_list = create_response.json()
+        assert len(satellite_list) == 0
+
+        create_response = await self.client.get("country/id/4234/satellite")
+        assert create_response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.asyncio
     async def test_delete_satellite(self):
 
         create_response = await self.client.get("/satellite/list/")
@@ -350,7 +380,7 @@ async def test_delete_country(async_client):
     create_response = await async_client.get("/country/list/")
     assert create_response.status_code == 200
     country_list = create_response.json()
-    assert len(country_list) == len(country_test_data)
+    assert len(country_list) == 3
     for country in country_list:
         country_id = country["id"]
         delete_response = await async_client.delete(f"/country/{country_id}")

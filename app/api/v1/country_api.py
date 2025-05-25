@@ -3,7 +3,13 @@ from typing import Annotated, List
 from app.core import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.service import create_country_service
-from app.schemas import CountryInDB, CountryCreate, PaginationBase, CountryUpdate
+from app.schemas import (
+    CountryInDB,
+    CountryCreate,
+    PaginationBase,
+    CountryUpdate,
+    SatelliteInDB,
+)
 from app.api.v1.helpers import raise_if_object_none
 
 router = APIRouter()
@@ -152,3 +158,26 @@ async def update_country(
         country, status.HTTP_409_CONFLICT, "A country with such data cannot be updated"
     )
     return country
+
+
+@router.get(
+    "/id/{country_id}/satellite",
+    response_model=List[SatelliteInDB],
+    summary="Get satellites by ID country id",
+    description="Returns a list of satellites that belong to a country by country ID",
+    responses={
+        404: {"description": "Country not found"},
+        200: {"description": "Country found", "model": List[SatelliteInDB]},
+    },
+)
+async def get_satellites_by_country_id(
+    country_id: CountryID,
+    db: AsyncSession = Depends(get_db),
+) -> List[SatelliteInDB]:
+    country_service = create_country_service(db)
+    satellite_list = await country_service.get_satellites_by_country_id(country_id)
+    if satellite_list is None:
+        await raise_if_object_none(
+            satellite_list, status.HTTP_404_NOT_FOUND, "Country not found"
+        )
+    return satellite_list
