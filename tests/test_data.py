@@ -91,3 +91,24 @@ satellite_characteristic_test_date_1 = {
     "remaining_lifetime": 2,
     "details": "nfhehdloevasdvsdjkdsjdsouefhouhofd",
 }
+
+region_test = [
+    {"name_region": "USA"},
+    {"name_region": "Russia"},
+    {"name_region": "China"},
+    {"name_region": "Canada"},
+    {"name_region": "South Africa"},
+    {"name_region": "Nigeria"},
+    {"name_region": "Brazil"},
+]
+
+test_subregion = [
+    {"name_region": "USA", "name_subregion": "Texas"},
+    {"name_region": "USA", "name_subregion": "New York"},
+    {"name_region": "USA", "name_subregion": "California"},
+    {"name_region": "USA", "name_subregion": "Las Vegas"},
+    {"name_region": "USA", "name_subregion": "Florida"},
+    {"name_region": "Russia", "name_subregion": "Moscow"},
+    {"name_region": "Russia", "name_subregion": "Stavropol"},
+    {"name_region": "Brazil", "name_subregion": "Rio"},
+]

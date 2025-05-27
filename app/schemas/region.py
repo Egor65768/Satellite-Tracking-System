@@ -43,9 +43,6 @@ class SubregionInDB(SubregionBase):
 
     id: int
     id_region: int
-    name_region: Optional[str] = Field(
-        None, min_length=1, max_length=60, json_schema_extra={"example": "Asia"}
-    )
 
 
 class SubregionCreate(SubregionBase):
