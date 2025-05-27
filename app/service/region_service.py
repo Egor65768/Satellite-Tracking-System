@@ -72,28 +72,36 @@ class RegionService:
         return await self.subregion_repository.get_models(pagination)
 
     async def create_region(self, region_create: RegionCreate) -> Optional[RegionInDB]:
-        return await self.region_repository.create_entity(region_create)
+        region = await self.region_repository.create_entity(region_create)
+        if region is not None:
+            await self.region_repository.session.commit()
+        return region
 
     async def create_subregion(
         self, subregion_create: SubregionCreate
     ) -> Optional[SubregionInDB]:
-        return await self.subregion_repository.create_entity(subregion_create)
+        subregion = await self.subregion_repository.create_entity(subregion_create)
+        if subregion is not None:
+            await self.subregion_repository.session.commit()
+        return subregion
 
     async def delete_region(self, region_id: int) -> bool:
         object_id = await self._get_validated_id(region_id)
-        return (
-            await self.region_repository.delete_model(object_id)
-            if object_id is not None
-            else False
-        )
+        if not object_id:
+            return False
+        result = await self.region_repository.delete_model(object_id)
+        if result:
+            await self.region_repository.session.commit()
+        return result
 
     async def delete_subregion(self, subregion_id: int) -> bool:
         object_id = await self._get_validated_id(subregion_id)
-        return (
-            await self.subregion_repository.delete_model(object_id)
-            if object_id is not None
-            else False
-        )
+        if not object_id:
+            return False
+        result = await self.subregion_repository.delete_model(object_id)
+        if result:
+            await self.region_repository.session.commit()
+        return result
 
     async def update_region(
         self, region_id: int, region_update_data: RegionUpdate

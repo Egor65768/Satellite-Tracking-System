@@ -9,3 +9,6 @@ clean_test:
 
 style:
 	black app/ tests/
+
+run_server:
+	uvicorn app.main:app --reload

@@ -26,6 +26,10 @@ Abbreviation = Annotated[
 ]
 
 
+async def get_country_service(db: AsyncSession = Depends(get_db)):
+    return create_country_service(db)
+
+
 @router.get(
     "/id/{country_id}",
     response_model=CountryInDB,
@@ -38,9 +42,8 @@ Abbreviation = Annotated[
 )
 async def get_country_by_id(
     country_id: CountryID,
-    db: AsyncSession = Depends(get_db),
+    country_service=Depends(get_country_service),
 ) -> CountryInDB:
-    country_service = create_country_service(db)
     country = await country_service.get_country(country_id)
     await raise_if_object_none(country, status.HTTP_404_NOT_FOUND, "Country not found")
     return country
@@ -58,9 +61,8 @@ async def get_country_by_id(
 )
 async def get_country_by_abbreviation(
     abbreviation: Abbreviation,
-    db: AsyncSession = Depends(get_db),
+    country_service=Depends(get_country_service),
 ) -> CountryInDB:
-    country_service = create_country_service(db)
     country = await country_service.get_by_abbreviation(abbreviation)
     await raise_if_object_none(country, status.HTTP_404_NOT_FOUND, "Country not found")
     return country
@@ -78,9 +80,8 @@ async def get_country_by_abbreviation(
 )
 async def create_country(
     country_create: CountryCreate,
-    db: AsyncSession = Depends(get_db),
+    country_service=Depends(get_country_service),
 ) -> CountryInDB:
-    country_service = create_country_service(db)
     country = await country_service.create_country(country_create)
     await raise_if_object_none(
         country, status.HTTP_409_CONFLICT, "A country with such data cannot be created"
@@ -100,9 +101,8 @@ async def create_country(
 )
 async def delete_by_id(
     country_id: CountryID,
-    db: AsyncSession = Depends(get_db),
+    country_service=Depends(get_country_service),
 ):
-    country_service = create_country_service(db)
     country = await country_service.delete_country(country_id)
     await raise_if_object_none(country, status.HTTP_404_NOT_FOUND, "Country not found")
     return None
@@ -117,11 +117,10 @@ async def delete_by_id(
     },
 )
 async def get_countries(
-    db: AsyncSession = Depends(get_db),
+    country_service=Depends(get_country_service),
     limit: Annotated[int, Query(ge=1)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> List[CountryInDB]:
-    country_service = create_country_service(db)
     return await country_service.get_countries(
         PaginationBase(limit=limit, offset=offset)
     )
@@ -144,9 +143,8 @@ async def get_countries(
 async def update_country(
     country_update: CountryUpdate,
     country_id: CountryID,
-    db: AsyncSession = Depends(get_db),
+    country_service=Depends(get_country_service),
 ) -> CountryInDB:
-    country_service = create_country_service(db)
     await raise_if_object_none(
         await country_service.get_country(country_id),
         status.HTTP_404_NOT_FOUND,
@@ -172,9 +170,8 @@ async def update_country(
 )
 async def get_satellites_by_country_id(
     country_id: CountryID,
-    db: AsyncSession = Depends(get_db),
+    country_service=Depends(get_country_service),
 ) -> List[SatelliteInDB]:
-    country_service = create_country_service(db)
     satellite_list = await country_service.get_satellites_by_country_id(country_id)
     if satellite_list is None:
         await raise_if_object_none(
