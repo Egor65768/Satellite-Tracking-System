@@ -356,6 +356,16 @@ class TestSatelliteAPI:
         assert create_response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.asyncio
+    async def test_delete_country_invalid(self):
+        response = await self.client.get("/satellite/list/")
+        assert response.status_code == status.HTTP_200_OK
+        sat = response.json()
+        sat_county_id = sat[0].get("country_id")
+
+        delete_response = await self.client.delete(f"/country/{sat_county_id}")
+        assert delete_response.status_code == status.HTTP_409_CONFLICT
+
+    @pytest.mark.asyncio
     async def test_delete_satellite(self):
 
         create_response = await self.client.get("/satellite/list/")

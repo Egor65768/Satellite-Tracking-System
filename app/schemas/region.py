@@ -54,10 +54,19 @@ class SubregionCreate(SubregionBase):
     id_region: int
 
 
-class SubregionUpdate(SubregionBase):
+class SubregionUpdate(BaseModel):
     """Схема для обновления субрегиона (все поля опциональны)."""
 
-    pass
+    name_subregion: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=60,
+        json_schema_extra={"example": "Moscow region"},
+    )
+
+    id_region: Optional[int] = Field(
+        None, description="ID региона к которому от данный субрегион"
+    )
 
 
 class Subregion(SubregionBase):

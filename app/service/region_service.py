@@ -107,21 +107,32 @@ class RegionService:
         self, region_id: int, region_update_data: RegionUpdate
     ) -> Optional[RegionInDB]:
         object_id = await self._get_validated_id(region_id)
-        return (
-            await self.region_repository.update_model(object_id, region_update_data)
-            if object_id is not None
-            else None
+        if not object_id:
+            return None
+        update_object = await self.region_repository.update_model(
+            object_id, region_update_data
         )
+        if update_object:
+            await self.region_repository.session.commit()
+        return update_object
 
     async def update_subregion(
         self, subregion_id: int, subregion_update: SubregionUpdate
     ) -> Optional[SubregionInDB]:
+        if (
+            subregion_update.id_region is None
+            and subregion_update.name_subregion is None
+        ):
+            return None
         object_id = await self._get_validated_id(subregion_id)
-        return (
-            await self.subregion_repository.update_model(object_id, subregion_update)
-            if object_id is not None
-            else None
+        if not object_id:
+            return None
+        update_object = await self.subregion_repository.update_model(
+            object_id, subregion_update
         )
+        if update_object:
+            await self.region_repository.session.commit()
+        return update_object
 
     async def get_subregions_by_region_id(
         self, region_id: int

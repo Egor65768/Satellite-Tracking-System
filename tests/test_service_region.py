@@ -128,6 +128,8 @@ class TestUpdate:
             region_update = RegionUpdate(name_region="US")
             region_id = (await service.get_region_by_name("USA")).id
             assert await service.update_region(region_id, region_update)
+
+        async with db_session.begin():
             assert (await service.get_region_by_id(region_id)).name_region == "US"
 
     @pytest.mark.asyncio
@@ -145,9 +147,12 @@ class TestUpdate:
     async def test_update_subregion(self, db_session):
         service = create_region_service(db_session)
         async with db_session.begin():
-            subregion_update = SubregionUpdate(name_subregion="NY")
+            update_data = {"name_subregion": "NY"}
             subregion_id = (await service.get_subregion_by_name("New York")).id
-            assert await service.update_subregion(subregion_id, subregion_update)
+            assert await service.update_subregion(
+                subregion_id, SubregionUpdate(**update_data)
+            )
+        async with db_session.begin():
             assert (
                 await service.get_subregion_by_id(subregion_id)
             ).name_subregion == "NY"
@@ -156,9 +161,11 @@ class TestUpdate:
     async def test_update_subregion_invalid(self, db_session):
         service = create_region_service(db_session)
         async with db_session.begin():
-            subregion_update = SubregionUpdate(name_subregion="Moscow")
+            update_data = {"name_subregion": "Moscow"}
             subregion_id = (await service.get_subregion_by_name("NY")).id
-            assert not await service.update_subregion(subregion_id, subregion_update)
+            assert not await service.update_subregion(
+                subregion_id, SubregionUpdate(**update_data)
+            )
 
         async with db_session.begin():
             assert (

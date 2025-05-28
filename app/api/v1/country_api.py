@@ -2,7 +2,7 @@ from fastapi import APIRouter, Path, Depends, status, Query
 from typing import Annotated, List
 from app.core import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.service import create_country_service
+from app.service import create_country_service, CountryService
 from app.schemas import (
     CountryInDB,
     CountryCreate,
@@ -101,10 +101,17 @@ async def create_country(
 )
 async def delete_by_id(
     country_id: CountryID,
-    country_service=Depends(get_country_service),
+    country_service: CountryService = Depends(get_country_service),
 ):
+    await raise_if_object_none(
+        await country_service.get_country(country_id),
+        status.HTTP_404_NOT_FOUND,
+        "Country not found",
+    )
     country = await country_service.delete_country(country_id)
-    await raise_if_object_none(country, status.HTTP_404_NOT_FOUND, "Country not found")
+    await raise_if_object_none(
+        country, status.HTTP_409_CONFLICT, "Conflict - Country could not be deleted"
+    )
     return None
 
 

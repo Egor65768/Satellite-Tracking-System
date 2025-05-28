@@ -17,8 +17,15 @@ from app.service import RegionService
 
 router = APIRouter()
 
-RegionID = Annotated[int, Path(title="The ID of the region", ge=0)]
-SubregionID = Annotated[int, Path(title="The ID of the subregion", ge=0)]
+RegionID = Annotated[
+    int,
+    Path(
+        title="The ID of the region",
+        ge=0,
+        le=10000,
+    ),
+]
+SubregionID = Annotated[int, Path(title="The ID of the subregion", ge=0, le=100000)]
 RegionName = Annotated[
     str,
     Path(
@@ -274,7 +281,7 @@ async def update_region(
 
 
 @router.put(
-    "/subregion/{region_id}",
+    "/subregion/{subregion_id}",
     response_model=SubregionInDB,
     summary="Update subregion information",
     description="Updates the information of a subregion. "
