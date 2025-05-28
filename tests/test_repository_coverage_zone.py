@@ -157,6 +157,40 @@ class TestGet:
             else:
                 assert zone is None
 
+    @pytest.mark.asyncio
+    async def test_get_zones_by_satellite_int_code(self, db_session):
+        international_code = satellite_test_date[0]["international_code"]
+        repo = CoverageZoneRepository(db_session)
+        async with db_session.begin():
+            zones: Optional[List[CoverageZoneInDB]] = (
+                await repo.get_zone_list_by_satellite_id(
+                    Object_str_ID(id=international_code)
+                )
+            )
+            assert zones is not None
+            assert len(zones) == len(test_create_data)
+            for zone in zones:
+                assert zone.id in ["2021-12bd-23730", "2001-1234-24670"]
+                assert zone.transmitter_type == "Ku-Band"
+
+        async with db_session.begin():
+            international_code = satellite_test_date[1]["international_code"]
+            zones: Optional[List[CoverageZoneInDB]] = (
+                await repo.get_zone_list_by_satellite_id(
+                    Object_str_ID(id=international_code)
+                )
+            )
+            assert len(zones) == 0
+
+        async with db_session.begin():
+            international_code = "dkljfejjreifj"
+            zones: Optional[List[CoverageZoneInDB]] = (
+                await repo.get_zone_list_by_satellite_id(
+                    Object_str_ID(id=international_code)
+                )
+            )
+            assert zones is None
+
 
 class TestZoneRelationship:
     @pytest.mark.asyncio

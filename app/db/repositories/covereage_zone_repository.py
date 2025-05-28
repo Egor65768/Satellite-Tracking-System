@@ -1,7 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from .repository import BaseRepository
 from typing import Optional, List
-from app.db import CoverageZone, Region, Subregion as Subregion_DB
+from app.db import CoverageZone, Region, Satellite, Subregion as Subregion_DB
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import (
     CoverageZoneInDB,
@@ -191,3 +191,19 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         if not zone_db:
             return None
         return SatelliteInDB(**zone_db.satellite.__dict__)
+
+    async def get_zone_list_by_satellite_id(
+        self, satellite_id: Object_str_ID
+    ) -> Optional[List[CoverageZoneInDB]]:
+        db_satellite: Optional[Satellite] = (
+            await self.session.execute(
+                select(Satellite).where(Satellite.international_code == satellite_id.id)
+            )
+        ).scalar_one_or_none()
+        if db_satellite is None:
+            return None
+        Coverage_Zone_In_DB_List = list()
+        coverage_zones_list = db_satellite.coverage_zones
+        for coverage_zone in coverage_zones_list:
+            Coverage_Zone_In_DB_List.append(CoverageZoneInDB(**coverage_zone.__dict__))
+        return Coverage_Zone_In_DB_List
