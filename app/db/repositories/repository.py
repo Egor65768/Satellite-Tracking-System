@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, Column, update
+from sqlalchemy import select, delete, Column, update, func
 
 from app.schemas import Object_ID, PaginationBase, Object_str_ID
 
@@ -55,6 +55,14 @@ class Repository(Generic[T]):
         except SQLAlchemyError:
             if self.session.in_transaction():
                 await self.session.rollback()
+            return None
+
+    async def get_count(self) -> Optional[int]:
+        try:
+            query = select(func.count(self.model.id))
+            result = await self.session.execute(query)
+            return result.scalar()
+        except SQLAlchemyError:
             return None
 
 

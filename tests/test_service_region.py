@@ -181,7 +181,6 @@ class TestDelete:
         async with db_session.begin():
             regions = await service.get_regions(PaginationBase())
             assert len(regions) == len(region_test)
-            assert not await service.delete_region(regions[0].id)
 
         async with db_session.begin():
             subregions = await service.get_subregions(PaginationBase())
@@ -195,6 +194,8 @@ class TestDelete:
         async with db_session.begin():
             regions = await service.get_regions(PaginationBase())
             assert len(regions) == len(region_test)
+            for region in regions:
+                assert len(await service.get_subregions_by_region_id(region.id)) == 0
         for region in regions:
             async with db_session.begin():
                 assert await service.delete_region(region.id)

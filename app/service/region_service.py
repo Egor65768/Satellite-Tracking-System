@@ -89,6 +89,11 @@ class RegionService:
         object_id = await self._get_validated_id(region_id)
         if not object_id:
             return False
+        subregion_list = await self.get_subregions_by_region_id(object_id.id)
+        if subregion_list is not None:
+            for subregion in subregion_list:
+                if not await self.delete_subregion(subregion.id):
+                    return False
         result = await self.region_repository.delete_model(object_id)
         if result:
             await self.region_repository.session.commit()

@@ -112,3 +112,35 @@ test_subregion = [
     {"name_region": "Russia", "name_subregion": "Stavropol"},
     {"name_region": "Brazil", "name_subregion": "Rio"},
 ]
+
+test_create_data = [
+    {
+        "id": "2021-12bd-23730",
+        "transmitter_type": "Ku-Band",
+        "image": "tests/test/test1.jpg",
+    },
+    {
+        "id": "2001-1234-24670",
+        "transmitter_type": "Ku-Band",
+        "image": "tests/test/test2.jpg",
+    },
+]
+
+test_get_data = [
+    ("2021-12bd-23730", True),
+    ("2001-1234-24670", True),
+    ("2edecdf", False),
+]
+
+region_test_data = [
+    {"name_region": "China"},
+    {"name_region": "Russia"},
+    {"name_region": "USA"},
+]
+
+subregion_test_data = [
+    {"name_subregion": "Wuhan", "id_region": 1},
+    {"name_subregion": "Moscow", "id_region": 2},
+    {"name_subregion": "Stavropol", "id_region": 2},
+    {"name_subregion": "Saint Petersburg", "id_region": 2},
+]

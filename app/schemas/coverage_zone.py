@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 
 class CoverageZoneBase(BaseModel):
@@ -26,4 +27,17 @@ class CoverageZoneInDB(CoverageZoneBase):
         min_length=5,
         max_length=90,
         description="Ссылка на изображение в S3 хранилище",
+    )
+
+
+class CoverageZoneUpdate(BaseModel):
+    image_data: Optional[bytes] = Field(
+        None,
+        description="Бинарные данные изображения",
+    )
+    transmitter_type: Optional[str] = Field(
+        None, min_length=5, max_length=25, json_schema_extra={"example": "Ku-band"}
+    )
+    satellite_code: Optional[str] = Field(
+        None, min_length=5, max_length=50, json_schema_extra={"example": "123_A_123_A"}
     )

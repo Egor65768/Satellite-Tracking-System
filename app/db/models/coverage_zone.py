@@ -41,12 +41,16 @@ class CoverageZone(Base):
         secondary=coverage_zone_association,
         lazy="selectin",
         back_populates="coverage_zone",
+        cascade="save-update, merge",
+        passive_deletes=True,
     )
     subregions: Mapped[List["Subregion"]] = relationship(
         "Subregion",
         secondary=coverage_zone_association_subregion,
         lazy="selectin",
         back_populates="coverage_zone",
+        cascade="save-update, merge",
+        passive_deletes=True,
     )
 
     def __repr__(self):

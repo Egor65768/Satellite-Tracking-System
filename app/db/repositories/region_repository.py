@@ -3,6 +3,7 @@ from app.db import Region, Subregion
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import RegionInDB, RegionBase, SubregionInDB, SubregionBase, Object_ID
 from typing import Optional, List
+from sqlalchemy.exc import IntegrityError
 
 
 class RegionRepository(BaseRepository[Region]):
@@ -46,3 +47,15 @@ class SubregionRepository(BaseRepository[Subregion]):
             return None
         db_region: Region = db_subregion.region
         return RegionInDB(**db_region.__dict__)
+
+    async def delete_model(self, object_id: Object_ID) -> bool:
+        try:
+            subregion = await self.session.get(Subregion, object_id.id)
+            if subregion:
+                await self.session.delete(subregion)
+                await self.session.flush()
+                await self.session.refresh(subregion.region)
+                return True
+            return False
+        except IntegrityError:
+            return False

@@ -24,41 +24,16 @@ from app.schemas import (
     ZoneRegionDetails,
     CountryCreate,
     SatelliteCreate,
+    CoverageZoneUpdate,
 )
 
-from tests.test_repository_satellite import satellite_test_date
-
-test_create_data = [
-    {
-        "id": "2021-12bd-23730",
-        "transmitter_type": "Ku-Band",
-        "image": "tests/test/test1.jpg",
-    },
-    {
-        "id": "2001-1234-24670",
-        "transmitter_type": "Ku-Band",
-        "image": "tests/test/test2.jpg",
-    },
-]
-
-test_get_data = [
-    ("2021-12bd-23730", True),
-    ("2001-1234-24670", True),
-    ("2edecdf", False),
-]
-
-region_test_data = [
-    {"name_region": "China"},
-    {"name_region": "Russia"},
-    {"name_region": "USA"},
-]
-
-subregion_test_data = [
-    {"name_subregion": "Wuhan", "id_region": 1},
-    {"name_subregion": "Moscow", "id_region": 2},
-    {"name_subregion": "Stavropol", "id_region": 2},
-    {"name_subregion": "Saint Petersburg", "id_region": 2},
-]
+from tests.test_data import (
+    satellite_test_date,
+    test_create_data,
+    test_get_data,
+    region_test_data,
+    subregion_test_data,
+)
 
 
 async def get_data_image(path_img: str) -> Optional[bytes]:
@@ -319,20 +294,116 @@ class TestZoneRelationship:
             assert len(await repo_region.get_models(PaginationBase())) == 4
         async with db_session.begin():
             assert len(await repo_subregion.get_models(PaginationBase())) == 7
-            assert not await repo_subregion.delete_model(Object_ID(id=7))
+            assert await repo_subregion.delete_model(Object_ID(id=7))
         async with db_session.begin():
-            assert len(await repo_subregion.get_models(PaginationBase())) == 7
+            assert len(await repo_subregion.get_models(PaginationBase())) == 6
         async with db_session.begin():
             assert len(await repo.get_region_list(zone_2_id)) == 1
             assert await repo.delete_region(region_1, zone_2_id)
             assert len(await repo.get_region_list(zone_2_id)) == 0
         async with db_session.begin():
-            assert await repo_subregion.delete_model(Object_ID(id=7))
+            assert not await repo_subregion.delete_model(Object_ID(id=7))
         async with db_session.begin():
             assert len(await repo_subregion.get_models(PaginationBase())) == 6
             assert len(await repo_region.get_models(PaginationBase())) == 4
             assert await repo_region.delete_model(Object_ID(id=5))
             assert len(await repo_region.get_models(PaginationBase())) == 3
+
+
+class TestUpdate:
+    @pytest.mark.asyncio
+    async def test_update_1(self, db_session):
+        repo = CoverageZoneRepository(db_session)
+        data_zone = test_create_data[0]
+        zone_id = Object_str_ID(id=data_zone.get("id"))
+        async with db_session.begin():
+            zone_data_in_db: Optional[CoverageZoneInDB] = await repo.get_as_model(
+                zone_id
+            )
+            async with await repo.s3._get_client() as client:
+                response = await client.get_object(
+                    Bucket=repo.s3.bucket_name, Key=f"zone/{zone_data_in_db.id}.jpg"
+                )
+                s3_image_data = await response["Body"].read()
+                assert (
+                    await get_data_image(test_create_data[0].get("image"))
+                    == s3_image_data
+                )
+            assert zone_data_in_db.id == test_create_data[0].get("id")
+            assert zone_data_in_db.transmitter_type == test_create_data[0].get(
+                "transmitter_type"
+            )
+            assert zone_data_in_db.satellite_code == satellite_test_date[0].get(
+                "international_code"
+            )
+            update_data = {
+                "transmitter_type": "KUKU-Band",
+                "satellite_code": satellite_test_date[1].get("international_code"),
+            }
+            assert await repo.update_model(zone_id, CoverageZoneUpdate(**update_data))
+        async with db_session.begin():
+            zone_data_in_db: Optional[CoverageZoneInDB] = await repo.get_as_model(
+                zone_id
+            )
+            assert zone_data_in_db.id == test_create_data[0].get("id")
+            assert zone_data_in_db.transmitter_type == "KUKU-Band"
+            assert zone_data_in_db.satellite_code == satellite_test_date[1].get(
+                "international_code"
+            )
+
+        async with db_session.begin():
+            update_data = {"image_data": await get_data_image("tests/test/test3.jpg")}
+            assert await repo.update_model(zone_id, CoverageZoneUpdate(**update_data))
+
+        async with db_session.begin():
+            zone_data_in_db: Optional[CoverageZoneInDB] = await repo.get_as_model(
+                zone_id
+            )
+            assert zone_data_in_db.id == test_create_data[0].get("id")
+            assert zone_data_in_db.transmitter_type == "KUKU-Band"
+            assert zone_data_in_db.satellite_code == satellite_test_date[1].get(
+                "international_code"
+            )
+            async with await repo.s3._get_client() as client:
+                response = await client.get_object(
+                    Bucket=repo.s3.bucket_name, Key=f"zone/{zone_data_in_db.id}.jpg"
+                )
+                s3_image_data = await response["Body"].read()
+                assert await get_data_image("tests/test/test3.jpg") == s3_image_data
+
+    @pytest.mark.asyncio
+    async def test_update_2(self, db_session):
+        repo = CoverageZoneRepository(db_session)
+        zone_data = test_create_data[0]
+        zone_id = Object_str_ID(id=zone_data.get("id"))
+        async with db_session.begin():
+            update_data = {
+                "image_data": await get_data_image(zone_data["image"]),
+                "transmitter_type": test_create_data[0].get("transmitter_type"),
+                "satellite_code": satellite_test_date[0].get("international_code"),
+            }
+            await repo.update_model(zone_id, CoverageZoneUpdate(**update_data))
+
+        async with db_session.begin():
+            zone_data_in_db: Optional[CoverageZoneInDB] = await repo.get_as_model(
+                zone_id
+            )
+            async with await repo.s3._get_client() as client:
+                response = await client.get_object(
+                    Bucket=repo.s3.bucket_name, Key=f"zone/{zone_data_in_db.id}.jpg"
+                )
+                s3_image_data = await response["Body"].read()
+                assert (
+                    await get_data_image(test_create_data[0].get("image"))
+                    == s3_image_data
+                )
+            assert zone_data_in_db.id == test_create_data[0].get("id")
+            assert zone_data_in_db.transmitter_type == test_create_data[0].get(
+                "transmitter_type"
+            )
+            assert zone_data_in_db.satellite_code == satellite_test_date[0].get(
+                "international_code"
+            )
 
 
 class TestDelete:

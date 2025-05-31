@@ -13,9 +13,15 @@ from app.schemas import (
     SubregionCreate,
     SubregionBase,
     SatelliteInDB,
+    CoverageZoneUpdate,
 )
 from app.s3_service.s3_service import S3Service
 from sqlalchemy import select
+from pydantic import BaseModel
+
+
+def all_fields_none(obj: BaseModel) -> bool:
+    return all(v is None for v in obj.model_dump().values())
 
 
 class CoverageZoneRepository(BaseRepository[CoverageZone]):
@@ -46,6 +52,27 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
             satellite_code=entity_create.satellite_code,
         )
         return await super().create_entity(coverage_zone)
+
+    async def update_model(
+        self, object_id: Object_str_ID, coverage_zone_update: CoverageZoneUpdate
+    ) -> Optional[CoverageZoneInDB]:
+        update = False
+        res = None
+        if coverage_zone_update.image_data is not None:
+            update = True
+            file_key = await self.get_s3_file_key(object_id.id)
+            await self.s3.delete_file(file_key)
+            if not await self.s3.upload_file(
+                file_data=coverage_zone_update.image_data, file_key=file_key
+            ):
+                return None
+            coverage_zone_update.image_data = None
+            coverage_zone_update.model_fields_set.discard("image_data")
+        if not all_fields_none(coverage_zone_update):
+            res = await super().update_model(object_id, coverage_zone_update)
+        elif update:
+            res = await self.get_as_model(object_id)
+        return res
 
     async def delete_model(self, object_id: Object_str_ID) -> bool:
         if not await super().delete_model(object_id):
@@ -103,9 +130,11 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         )
         if not region_to_remove:
             return False
-        for subregion in zone_db.subregions:
-            if subregion.id_region == region_to_remove.id:
-                zone_db.subregions.remove(subregion)
+        subregions_to_remove = [
+            sr for sr in zone_db.subregions if sr.id_region == region_to_remove.id
+        ]
+        for subregion in subregions_to_remove:
+            zone_db.subregions.remove(subregion)
         zone_db.regions.remove(region_to_remove)
         await self.session.flush()
         return True
@@ -146,6 +175,7 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
             )
             self.session.add(db_subregion)
             await self.session.flush()
+
         zone_db.subregions.append(db_subregion)
         await self.session.flush()
         return True

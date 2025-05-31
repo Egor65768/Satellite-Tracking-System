@@ -232,11 +232,11 @@ class TestRegionAPI:
 
     @pytest.mark.asyncio
     async def test_delete_region_invalid(self):
-        # Мы не можем удалить регион так как у него есть субрегионы
+        # Мы можем удалить регион даже если у него есть субрегион. Он удалиться вместе с регионом
         region = (await self.client.get("/region/name/Russia")).json()
         assert region
         response = await self.client.delete(f"/region/{region.get("id")}")
-        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     @pytest.mark.asyncio
     async def test_delete_subregion(self):

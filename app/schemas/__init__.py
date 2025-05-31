@@ -17,7 +17,7 @@ from .region import (
     Subregion,
 )
 from .common_attributes import Object_ID, PaginationBase, Object_str_ID
-from .coveragezone import CoverageZoneCreate, CoverageZoneInDB
+from .coverage_zone import CoverageZoneCreate, CoverageZoneInDB, CoverageZoneUpdate
 from .satellite import (
     SatelliteCreate,
     SatelliteInDB,
@@ -46,6 +46,7 @@ __all__ = [
     "SubregionUpdate",
     "CoverageZoneCreate",
     "CoverageZoneInDB",
+    "CoverageZoneUpdate",
     "Object_str_ID",
     "ZoneRegionDetails",
     "Subregion",
