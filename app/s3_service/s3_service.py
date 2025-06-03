@@ -1,6 +1,7 @@
 from app.core import settings
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
+from typing import Optional
 
 
 class S3Service:
@@ -43,3 +44,14 @@ class S3Service:
                 return response["ResponseMetadata"]["HTTPStatusCode"] in (200, 204)
             except ClientError:
                 return False
+
+    async def get_file(self, zone_id: str) -> Optional[bytes]:
+        try:
+            async with await self._get_client() as client:
+                response = await client.get_object(
+                    Bucket=self.bucket_name, Key=f"zone/{zone_id}.jpg"
+                )
+                s3_image_data = await response["Body"].read()
+                return s3_image_data
+        except ClientError:
+            return None

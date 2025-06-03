@@ -6,6 +6,8 @@ from app.schemas import (
     CoverageZoneCreate,
     RegionBase,
     SubregionCreate,
+    SubregionBase,
+    CoverageZoneUpdate,
 )
 from app.service import (
     create_country_service,
@@ -13,6 +15,7 @@ from app.service import (
     create_coverage_zone_service,
     create_region_service,
 )
+from app.s3_service import S3Service
 
 from tests.test_data import country_test_data, satellite_test_date, test_create_data
 import aiofiles
@@ -231,8 +234,164 @@ class TestGet:
                 # elif region.name_region == "Russia":
                 #     assert region.subregion_list[0].name_subregion == "Moscow"
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("coverage_zone_data", test_create_data)
+    async def test_get_satellite(self, db_session, coverage_zone_data):
+        service = create_coverage_zone_service(db_session)
+        async with db_session.begin():
+            satellite = await service.get_satellite(coverage_zone_data.get("id"))
+            assert satellite.international_code == satellite_test_date[0].get(
+                "international_code"
+            )
+
+    @pytest.mark.asyncio
+    async def test_get_satellite_invalid(self, db_session):
+        service = create_coverage_zone_service(db_session)
+        async with db_session.begin():
+            assert await service.get_satellite("akakaksssd") is None
+
+    @pytest.mark.asyncio
+    async def test_get_coverage_zones(self, db_session):
+        service = create_coverage_zone_service(db_session)
+        async with db_session.begin():
+            zones = await service.get_coverage_zones(PaginationBase())
+            for zone in zones:
+                assert zone.id in ["2021-12bd-23730", "2001-1234-24670"]
+            assert await service.get_count_coverage_zone_in_db() == len(zones)
+
+
+class TestUpdate:
+    @pytest.mark.asyncio
+    async def test_update_coverage_zone_1(self, db_session):
+        coverage_zone_id = test_create_data[0].get("id")
+        service = create_coverage_zone_service(db_session)
+        s3_service = S3Service()
+        async with db_session.begin():
+            zone = await service.get_by_id(coverage_zone_id)
+            assert zone.transmitter_type == test_create_data[0].get("transmitter_type")
+            assert zone.satellite_code == satellite_test_date[0].get(
+                "international_code"
+            )
+            assert zone.id == test_create_data[0].get("id")
+            local_data = await get_data_image(test_create_data[0].get("image"))
+            assert local_data is not None
+            s3_data = await s3_service.get_file(coverage_zone_id)
+            assert s3_data is not None
+            assert s3_data == local_data
+        update_data_dict = {
+            "transmitter_type": "TEST_TEST",
+            "satellite_code": satellite_test_date[1].get("international_code"),
+        }
+        async with db_session.begin():
+            assert await service.update_coverage_zone(
+                coverage_zone_id, CoverageZoneUpdate(**update_data_dict)
+            )
+        async with db_session.begin():
+            zone = await service.get_by_id(coverage_zone_id)
+            assert zone.transmitter_type == "TEST_TEST"
+            assert zone.satellite_code == satellite_test_date[1].get(
+                "international_code"
+            )
+            assert zone.id == test_create_data[0].get("id")
+
+        update_data_dict = {
+            "image_data": await get_data_image("tests/test/test3.jpg"),
+        }
+        async with db_session.begin():
+            assert await service.update_coverage_zone(
+                coverage_zone_id, CoverageZoneUpdate(**update_data_dict)
+            )
+
+        local_data = await get_data_image("tests/test/test3.jpg")
+        assert local_data is not None
+        s3_data = await s3_service.get_file(coverage_zone_id)
+        assert s3_data is not None
+        assert s3_data == local_data
+
+    @pytest.mark.asyncio
+    async def test_update_coverage_zone_2(self, db_session):
+        coverage_zone_id = test_create_data[0].get("id")
+        service = create_coverage_zone_service(db_session)
+        s3_service = S3Service()
+        async with db_session.begin():
+            zone = await service.get_by_id(coverage_zone_id)
+            assert zone.transmitter_type == "TEST_TEST"
+            assert zone.satellite_code == satellite_test_date[1].get(
+                "international_code"
+            )
+            assert zone.id == test_create_data[0].get("id")
+            local_data = await get_data_image("tests/test/test3.jpg")
+            assert local_data is not None
+            s3_data = await s3_service.get_file(coverage_zone_id)
+            assert s3_data is not None
+            assert s3_data == local_data
+
+        update_data_dict = {
+            "transmitter_type": test_create_data[0].get("transmitter_type"),
+            "satellite_code": satellite_test_date[0].get("international_code"),
+            "image_data": await get_data_image("tests/test/test1.jpg"),
+        }
+        async with db_session.begin():
+            assert await service.update_coverage_zone(
+                coverage_zone_id, CoverageZoneUpdate(**update_data_dict)
+            )
+
+        async with db_session.begin():
+            zone = await service.get_by_id(coverage_zone_id)
+            assert zone.transmitter_type == test_create_data[0].get("transmitter_type")
+            assert zone.satellite_code == satellite_test_date[0].get(
+                "international_code"
+            )
+            assert zone.id == test_create_data[0].get("id")
+            local_data = await get_data_image("tests/test/test1.jpg")
+            assert local_data is not None
+            s3_data = await s3_service.get_file(coverage_zone_id)
+            assert s3_data is not None
+            assert s3_data == local_data
+
 
 class TestDelete:
+    @pytest.mark.asyncio
+    async def test_delete_region_by_coverage_zone_id(self, db_session):
+        coverage_zone_id = test_create_data[1].get("id")
+        service = create_coverage_zone_service(db_session)
+        async with db_session.begin():
+            assert await service.delete_region_by_coverage_zone(
+                coverage_zone_id, RegionBase(name_region="New Zeland")
+            )
+        async with db_session.begin():
+            assert not await service.delete_region_by_coverage_zone(
+                coverage_zone_id, RegionBase(name_region="England")
+            )
+        async with db_session.begin():
+            regions = await service.get_region_list_by_id(coverage_zone_id)
+        for region in regions:
+            assert region.name_region in ["USA", "Russia"]
+
+    @pytest.mark.asyncio
+    async def test_delete_subregion_by_coverage_zone_id(self, db_session):
+        coverage_zone_id = test_create_data[1].get("id")
+        service = create_coverage_zone_service(db_session)
+        async with db_session.begin():
+            assert not await service.delete_subregion_by_coverage_zone(
+                coverage_zone_id, SubregionBase(name_subregion="Wellington")
+            )
+        async with db_session.begin():
+            assert not await service.delete_subregion_by_coverage_zone(
+                coverage_zone_id, SubregionBase(name_subregion="Wellington")
+            )
+        async with db_session.begin():
+            assert await service.delete_subregion_by_coverage_zone(
+                coverage_zone_id, SubregionBase(name_subregion="UTA")
+            )
+        async with db_session.begin():
+            regions = await service.get_region_list_by_id(coverage_zone_id)
+        for region in regions:
+            assert region.name_region in ["USA", "Russia"]
+            if region.name_region == "USA":
+                assert len(region.subregion_list) == 1
+                assert region.subregion_list[0].name_subregion == "California"
+
     @pytest.mark.asyncio
     async def test_delete_coverage_zone(self, db_session):
         service = create_coverage_zone_service(db_session)
