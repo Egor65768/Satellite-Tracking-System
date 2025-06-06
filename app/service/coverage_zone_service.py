@@ -10,6 +10,7 @@ from app.schemas import (
     SubregionBase,
     CoverageZoneUpdate,
     PaginationBase,
+    NumberOfZones,
 )
 from typing import Optional, List
 from pydantic import ValidationError
@@ -73,8 +74,13 @@ class CoverageZoneService:
     ) -> List[CoverageZoneInDB]:
         return await self.repository.get_models(pagination)
 
-    async def get_count_coverage_zone_in_db(self) -> Optional[int]:
-        return await self.repository.get_count()
+    async def get_count_coverage_zone_in_db(self) -> Optional[NumberOfZones]:
+        try:
+            return NumberOfZones(
+                number_of_coverage_zones=await self.repository.get_count()
+            )
+        except ValidationError:
+            return None
 
     async def create_coverage_zone(
         self, coverage_zone_create: CoverageZoneCreate

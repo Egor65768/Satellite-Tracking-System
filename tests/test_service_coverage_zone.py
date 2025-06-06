@@ -61,7 +61,9 @@ class TestCreate:
         )
         async with db_session.begin():
             assert len(await service.get_coverage_zones(PaginationBase())) == 0
-            assert await service.get_count_coverage_zone_in_db() == 0
+            assert (
+                await service.get_count_coverage_zone_in_db()
+            ).number_of_coverage_zones == 0
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("coverage_zone_data", test_create_data)
@@ -88,9 +90,9 @@ class TestCreate:
             assert len(await service.get_coverage_zones(PaginationBase())) == len(
                 test_create_data
             )
-            assert await service.get_count_coverage_zone_in_db() == len(
-                test_create_data
-            )
+            assert (
+                await service.get_count_coverage_zone_in_db()
+            ).number_of_coverage_zones == len(test_create_data)
 
     @pytest.mark.asyncio
     async def test_add_region(self, db_session):
@@ -257,7 +259,9 @@ class TestGet:
             zones = await service.get_coverage_zones(PaginationBase())
             for zone in zones:
                 assert zone.id in ["2021-12bd-23730", "2001-1234-24670"]
-            assert await service.get_count_coverage_zone_in_db() == len(zones)
+            assert (
+                await service.get_count_coverage_zone_in_db()
+            ).number_of_coverage_zones == len(zones)
 
 
 class TestUpdate:
@@ -406,7 +410,9 @@ class TestDelete:
         )
         async with db_session.begin():
             assert len(await service.get_coverage_zones(PaginationBase())) == 0
-            assert await service.get_count_coverage_zone_in_db() == 0
+            assert (
+                await service.get_count_coverage_zone_in_db()
+            ).number_of_coverage_zones == 0
 
 
 @pytest.mark.asyncio

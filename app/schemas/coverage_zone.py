@@ -41,3 +41,7 @@ class CoverageZoneUpdate(BaseModel):
     satellite_code: Optional[str] = Field(
         None, min_length=5, max_length=50, json_schema_extra={"example": "123_A_123_A"}
     )
+
+
+class NumberOfZones(BaseModel):
+    number_of_coverage_zones: int = Field(..., ge=0, json_schema_extra={"example": 15})
