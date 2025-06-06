@@ -1,4 +1,13 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    status,
+    Query,
+    Form,
+    File,
+    UploadFile,
+    HTTPException,
+)
 from typing import Annotated, List
 from app.api.v1.helpers import raise_if_object_none
 from app.schemas import (
@@ -7,7 +16,6 @@ from app.schemas import (
     SatelliteInDB,
     PaginationBase,
     NumberOfZones,
-    CoverageZoneCreate,
     RegionBase,
     SubregionCreate,
     SubregionBase,
@@ -21,6 +29,7 @@ from app.api.v1.helpers import (
     CoverageZoneId,
     get_coverage_zone_service,
     valid_coverage_zone,
+    valid_coverage_zone_create,
 )
 
 
@@ -115,7 +124,7 @@ async def get_satellite_by_coverage_zone_id(
 
 
 @router.get(
-    "/coverage_zones",
+    "/coverage_zones/",
     response_model=List[CoverageZoneInDB],
     summary="Get a list coverage zone",
     responses={
@@ -134,7 +143,7 @@ async def get_coverage_zones(
 
 
 @router.get(
-    "/coverage_zones/count",
+    "/coverage_zones/count/",
     response_model=NumberOfZones,
     summary="Returns the number of coverage zones",
     responses={
@@ -159,9 +168,23 @@ async def get_number_of_coverage_zones(
     },
 )
 async def create_coverage_zone(
-    coverage_zone_create: CoverageZoneCreate,
+    coverage_zone_id: Annotated[
+        str, Form(..., min_length=5, max_length=60, examples=["2012-07B4-1"])
+    ],
+    transmitter_type: Annotated[
+        str, Form(..., min_length=5, max_length=25, examples=["Ku-band"])
+    ],
+    satellite_code: Annotated[
+        str, Form(..., min_length=5, max_length=50, examples=["123_A_123_A"])
+    ],
+    image: Annotated[
+        UploadFile, File(..., description="Coverage zone image in JPEG/PNG format")
+    ],
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
 ) -> CoverageZoneInDB:
+    coverage_zone_create = await valid_coverage_zone_create(
+        coverage_zone_id, transmitter_type, satellite_code, image
+    )
     coverage_zone = await coverage_zone_service.create_coverage_zone(
         coverage_zone_create
     )
@@ -195,6 +218,35 @@ async def add_region_by_coverage_zone_id(
         status.HTTP_409_CONFLICT,
         "The region cannot be added to this coverage area.",
     )
+
+
+@router.post(
+    path="/regions/{coverage_zone_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Adds a regions list to the coverage zone",
+    responses={
+        409: {"description": "The region cannot be added to this coverage zone."},
+        404: {"description": "Coverage zone not found"},
+        204: {"description": "The regions has been added to this coverage zone."},
+    },
+)
+async def add_regions_by_coverage_zone_id(
+    regions_data: List[RegionBase],
+    coverage_zone_id: CoverageZoneId,
+    _: None = Depends(valid_coverage_zone),
+    coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+):
+    result = await coverage_zone_service.add_regions_by_coverage_zone_id(
+        coverage_zone_id, regions_data
+    )
+    if not result or not all(result):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "The region cannot be added to this coverage area.",
+                "result": result,
+            },
+        )
 
 
 @router.delete(

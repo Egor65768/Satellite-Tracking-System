@@ -102,6 +102,14 @@ region_test = [
     {"name_region": "Brazil"},
 ]
 
+region_list = [
+    {"name_region": "region_1"},
+    {"name_region": "region_2"},
+    {"name_region": "region_3"},
+    {"name_region": "region_4"},
+    {"name_region": "region_5"},
+]
+
 test_subregion = [
     {"name_region": "USA", "name_subregion": "Texas"},
     {"name_region": "USA", "name_subregion": "New York"},

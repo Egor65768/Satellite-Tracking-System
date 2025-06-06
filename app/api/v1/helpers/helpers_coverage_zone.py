@@ -1,8 +1,10 @@
-from fastapi import HTTPException, Path, status, Depends
+from fastapi import HTTPException, Path, status, Depends, UploadFile
 from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import get_db
 from app.service import create_coverage_zone_service, CoverageZoneService
+from app.schemas import CoverageZoneCreate
+from pydantic import ValidationError
 
 CoverageZoneId = Annotated[
     str,
@@ -29,3 +31,21 @@ async def valid_coverage_zone(
             status_code=status.HTTP_404_NOT_FOUND, detail="Coverage zone not found"
         )
     return None
+
+
+async def valid_coverage_zone_create(
+    coverage_zone_id: str, transmitter_type: str, satellite_code: str, image: UploadFile
+) -> CoverageZoneCreate:
+    if not image.content_type.startswith("image/"):
+        raise HTTPException(400, "Only image files are allowed")
+    image_data = await image.read()
+    try:
+        coverage_zone_create = CoverageZoneCreate(
+            id=coverage_zone_id,
+            transmitter_type=transmitter_type,
+            satellite_code=satellite_code,
+            image_data=image_data,
+        )
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())
+    return coverage_zone_create

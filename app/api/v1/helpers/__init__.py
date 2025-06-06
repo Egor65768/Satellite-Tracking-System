@@ -3,6 +3,7 @@ from .helpers_coverage_zone import (
     CoverageZoneId,
     get_coverage_zone_service,
     valid_coverage_zone,
+    valid_coverage_zone_create,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "CoverageZoneId",
     "get_coverage_zone_service",
     "valid_coverage_zone",
+    "valid_coverage_zone_create",
 ]

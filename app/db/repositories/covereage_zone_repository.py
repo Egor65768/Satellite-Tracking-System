@@ -101,10 +101,7 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
             for region in db_obj.regions
         ]
 
-    async def add_region(self, region: RegionBase, zone_id: Object_str_ID) -> bool:
-        zone_db = await self.get_by_id(zone_id.id)
-        if zone_db is None:
-            return False
+    async def _add_region(self, region: RegionBase, zone_db: CoverageZone):
         if any(region.name_region == r.name_region for r in zone_db.regions):
             return True
         db_region = (
@@ -116,10 +113,34 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         if db_region is None:
             db_region = Region(name_region=region.name_region)
             self.session.add(db_region)
-            await self.session.flush()
+            try:
+                await self.session.flush()
+            except SQLAlchemyError:
+                return False
+
         zone_db.regions.append(db_region)
-        await self.session.flush()
+        try:
+            await self.session.flush()
+        except SQLAlchemyError:
+            return False
         return True
+
+    async def add_region(self, region: RegionBase, zone_id: Object_str_ID) -> bool:
+        zone_db = await self.get_by_id(zone_id.id)
+        if zone_db is None:
+            return False
+        return await self._add_region(region, zone_db)
+
+    async def add_region_list(
+        self, regions: List[RegionBase], zone_id: Object_str_ID
+    ) -> Optional[List[bool]]:
+        zone_db = await self.get_by_id(zone_id.id)
+        if zone_db is None:
+            return None
+        res_list = list()
+        for region in regions:
+            res_list.append(await self._add_region(region, zone_db))
+        return res_list
 
     async def delete_region(self, region: RegionBase, zone_id: Object_str_ID) -> bool:
         zone_db = await self.get_by_id(zone_id.id)

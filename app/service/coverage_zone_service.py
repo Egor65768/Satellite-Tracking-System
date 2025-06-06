@@ -101,6 +101,17 @@ class CoverageZoneService:
             await self.repository.session.commit()
         return res
 
+    async def add_regions_by_coverage_zone_id(
+        self, coverage_zone_id: str, regions: List[RegionBase]
+    ) -> Optional[List[bool]]:
+        coverage_zone_id = await self._get_validated_object_id(coverage_zone_id)
+        if coverage_zone_id is None:
+            return None
+        res = await self.repository.add_region_list(regions, coverage_zone_id)
+        if all(res):
+            await self.repository.session.commit()
+        return res
+
     async def delete_region_by_coverage_zone(
         self, coverage_zone_id: str, region: RegionBase
     ) -> bool:
