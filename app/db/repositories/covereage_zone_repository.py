@@ -160,12 +160,9 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         await self.session.flush()
         return True
 
-    async def add_subregion(
-        self, subregion: SubregionCreate, zone_id: Object_str_ID
+    async def _add_subregion(
+        self, subregion: SubregionCreate, zone_db: CoverageZone
     ) -> bool:
-        zone_db = await self.get_by_id(zone_id.id)
-        if not zone_db:
-            return False
         if any(
             s.name_subregion == subregion.name_subregion
             for r in zone_db.regions
@@ -200,6 +197,25 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
         zone_db.subregions.append(db_subregion)
         await self.session.flush()
         return True
+
+    async def add_subregion(
+        self, subregion: SubregionCreate, zone_id: Object_str_ID
+    ) -> bool:
+        zone_db = await self.get_by_id(zone_id.id)
+        if not zone_db:
+            return False
+        return await self._add_subregion(subregion, zone_db)
+
+    async def add_subregion_list(
+        self, subregions: List[SubregionCreate], zone_id: Object_str_ID
+    ) -> Optional[List[bool]]:
+        zone_db = await self.get_by_id(zone_id.id)
+        if not zone_db:
+            return None
+        res = list()
+        for subregion in subregions:
+            res.append(await self._add_subregion(subregion, zone_db))
+        return res
 
     async def delete_subregion(
         self, subregion: SubregionBase, zone_id: Object_str_ID

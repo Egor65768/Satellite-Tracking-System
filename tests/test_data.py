@@ -110,6 +110,19 @@ region_list = [
     {"name_region": "region_5"},
 ]
 
+subregion_list = [
+    {"name_region": "region_1", "name_subregion": "subregion_1"},
+    {"name_region": "region_1", "name_subregion": "subregion_2"},
+    {"name_region": "region_1", "name_subregion": "subregion_3"},
+    {"name_region": "region_1", "name_subregion": "subregion_4"},
+    {"name_region": "region_1", "name_subregion": "subregion_5"},
+    {"name_region": "region_2", "name_subregion": "subregion_6"},
+    {"name_region": "region_3", "name_subregion": "subregion_7"},
+    {"name_region": "region_2", "name_subregion": "subregion_8"},
+    {"name_region": "region_2", "name_subregion": "subregion_9"},
+    {"name_region": "region_2", "name_subregion": "subregion_10"},
+]
+
 test_subregion = [
     {"name_region": "USA", "name_subregion": "Texas"},
     {"name_region": "USA", "name_subregion": "New York"},

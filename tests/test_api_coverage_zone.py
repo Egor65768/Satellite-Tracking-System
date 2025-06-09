@@ -7,6 +7,7 @@ from tests.test_data import (
     test_create_data,
     region_test,
     region_list,
+    subregion_list,
 )
 from tests.test_service_coverage_zone import get_data_image
 
@@ -196,12 +197,181 @@ class TestCoverageZoneAPI:
         assert len(regions) == len(region_list) + len(region_test)
 
     @pytest.mark.asyncio
+    async def test_add_subregion_by_coverage_zone(self):
+        coverage_zone_id = test_create_data[1].get("id")
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list) + len(region_test)
+        region_list_local = response.json()
+        for region in region_list_local:
+            assert len(region.get("subregion_list")) == 0
+        data_subregion = {
+            "name_subregion": "test_subregion_1",
+            "id_region": (await self.client.get(f"/region/name/USA")).json().get("id"),
+        }
+        response = await self.client.post(
+            f"/coverage_zone/subregion/{coverage_zone_id}", json=data_subregion
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list) + len(region_test)
+        region_list_local = response.json()
+        print(region_list_local)
+        for region in region_list_local:
+            if region.get("name_region") != "USA":
+                assert len(region.get("subregion_list")) == 0
+            else:
+                assert len(region.get("subregion_list")) == 1
+                assert (
+                    region.get("subregion_list")[0].get("name_subregion")
+                    == "test_subregion_1"
+                )
+
+        response = await self.client.post(
+            f"/coverage_zone/subregion/{coverage_zone_id}", json=data_subregion
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        coverage_zone_id_invalid = "invalid_id_zone"
+        response = await self.client.post(
+            f"/coverage_zone/subregion/{coverage_zone_id_invalid}", json=data_subregion
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.asyncio
+    async def test_add_subregion_by_coverage_zone_list(self):
+        coverage_zone_id = test_create_data[0].get("id")
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list)
+        region_list_local = response.json()
+        for region in region_list_local:
+            assert len(region.get("subregion_list")) == 0
+
+        create_subregion_data = list()
+        for subregion in subregion_list:
+            create_subregion_data.append(
+                {
+                    "name_subregion": subregion.get("name_subregion"),
+                    "id_region": (
+                        await self.client.get(
+                            f"/region/name/{subregion.get("name_region")}"
+                        )
+                    )
+                    .json()
+                    .get("id"),
+                }
+            )
+        response = await self.client.post(
+            f"/coverage_zone/subregions/{coverage_zone_id}", json=create_subregion_data
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list)
+        region_list_local = response.json()
+        for region in region_list_local:
+            assert region.get("subregion_list") is not None
+
+    @pytest.mark.asyncio
+    async def test_add_subregion_by_coverage_zone_2(self):
+        coverage_zone_data_request = {
+            "coverage_zone_id": "2121-1424-24270",
+            "transmitter_type": "Kuku-Band",
+            "satellite_code": satellite_test_date[0].get("international_code"),
+        }
+        files = {
+            "image": (
+                "tests/test/test4.png",
+                await get_data_image("tests/test/test4.png"),
+                "image/png",
+            )
+        }
+        response = await self.client.post(
+            "/coverage_zone/", data=coverage_zone_data_request, files=files
+        )
+        assert response.status_code == status.HTTP_200_OK
+        coverage_zone_id = "2121-1424-24270"
+
+        region_list_test = [
+            {"name_region": "USA"},
+            {"name_region": "New Zeland"},
+            {"name_region": "Russia"},
+        ]
+
+        for region in region_list_test:
+            response = await self.client.post(
+                f"/coverage_zone/region/{coverage_zone_id}", json=region
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        subregion_data = [
+            {
+                "name_subregion": "UTA",
+                "id_region": (await self.client.get(f"/region/name/USA"))
+                .json()
+                .get("id"),
+            },
+            {
+                "name_subregion": "Wellington",
+                "id_region": (await self.client.get(f"/region/name/New Zeland"))
+                .json()
+                .get("id"),
+            },
+            {
+                "name_subregion": "California",
+                "id_region": (await self.client.get(f"/region/name/USA"))
+                .json()
+                .get("id"),
+            },
+            {
+                "name_subregion": "Auckland",
+                "id_region": (await self.client.get(f"/region/name/New Zeland"))
+                .json()
+                .get("id"),
+            },
+            {
+                "name_subregion": "Moscow",
+                "id_region": (await self.client.get(f"/region/name/Russia"))
+                .json()
+                .get("id"),
+            },
+        ]
+        for subregion in subregion_data:
+            response = await self.client.post(
+                f"/coverage_zone/subregion/{coverage_zone_id}", json=subregion
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        regions_list = response.json()
+        for region in regions_list:
+            if region.get("name_region") == "USA":
+                subregion_region_list = region.get("subregion_list")
+                assert len(subregion_region_list) == 2
+                for subregion in subregion_region_list:
+                    assert subregion.get("name_subregion") in ["UTA", "California"]
+            elif region.get("name_region") == "New Zeland":
+                subregion_region_list = region.get("subregion_list")
+                assert len(subregion_region_list) == 2
+                for subregion in subregion_region_list:
+                    assert subregion.get("name_subregion") in ["Auckland", "Wellington"]
+            if region.get("name_region") == "Russia":
+                subregion_region_list = region.get("subregion_list")
+                assert len(subregion_region_list) == 1
+                for subregion in subregion_region_list:
+                    assert subregion.get("name_subregion") in ["Moscow"]
+
+    @pytest.mark.asyncio
     async def test_delete_coverage_zone(self):
         response = await self.client.get(
             "/coverage_zone/coverage_zones/count/",
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {"number_of_coverage_zones": 2}
+        assert response.json() == {"number_of_coverage_zones": 3}
 
         response = await self.client.get(
             "/coverage_zone/coverage_zones/",

@@ -1,4 +1,4 @@
-from app.db import CoverageZoneRepository
+from app.db import CoverageZoneRepository, RegionRepository
 from app.schemas import (
     CoverageZoneInDB,
     Object_str_ID,
@@ -11,6 +11,7 @@ from app.schemas import (
     CoverageZoneUpdate,
     PaginationBase,
     NumberOfZones,
+    SubregionCreateByName,
 )
 from typing import Optional, List
 from pydantic import ValidationError
@@ -108,6 +109,8 @@ class CoverageZoneService:
         if coverage_zone_id is None:
             return None
         res = await self.repository.add_region_list(regions, coverage_zone_id)
+        if res is None:
+            return None
         if all(res):
             await self.repository.session.commit()
         return res
@@ -135,6 +138,45 @@ class CoverageZoneService:
             subregion=subregion, zone_id=coverage_zone_id
         )
         if res:
+            await self.repository.session.commit()
+        return res
+
+    async def add_subregion_by_region_name_and_coverage_zone_id(
+        self,
+        coverage_zone_id: str,
+        subregion: SubregionCreateByName,
+    ) -> bool:
+        region_repository = RegionRepository(self.repository.session)
+        coverage_zone_id = await self._get_validated_object_id(coverage_zone_id)
+        if coverage_zone_id is None:
+            return False
+        region = await region_repository.get_region_by_name(
+            RegionBase(name_region=subregion.region_name)
+        )
+        if not region:
+            return False
+        subregion = SubregionCreate(
+            name_subregion=subregion.name_subregion,
+            id=subregion.id,
+            id_region=region.id,
+        )
+        res = await self.repository.add_subregion(
+            subregion=subregion, zone_id=coverage_zone_id
+        )
+        if res:
+            await self.repository.session.commit()
+        return res
+
+    async def add_subregions_by_coverage_zone_id(
+        self, coverage_zone_id: str, subregions: List[SubregionCreate]
+    ) -> Optional[List[bool]]:
+        coverage_zone_id = await self._get_validated_object_id(coverage_zone_id)
+        if coverage_zone_id is None:
+            return None
+        res = await self.repository.add_subregion_list(subregions, coverage_zone_id)
+        if res is None:
+            return None
+        if all(res):
             await self.repository.session.commit()
         return res
 

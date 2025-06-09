@@ -8,6 +8,7 @@ from app.schemas import (
     SubregionCreate,
     SubregionBase,
     CoverageZoneUpdate,
+    SubregionCreateByName,
 )
 from app.service import (
     create_country_service,
@@ -175,6 +176,69 @@ class TestCreate:
                 elif region.name_region == "Russia":
                     assert len(region.subregion_list) == 1
                     assert region.subregion_list[0].name_subregion == "Moscow"
+
+    async def test_add_subregion_1(self, db_session):
+        service = create_coverage_zone_service(db_session)
+        coverage_zone_id = test_create_data[1].get("id")
+        async with db_session.begin():
+            subregion = {"name_subregion": "Minsk", "region_name": "Belarus"}
+            assert not await service.add_subregion_by_region_name_and_coverage_zone_id(
+                coverage_zone_id, SubregionCreateByName(**subregion)
+            )
+            subregion = {"name_subregion": "Minsk", "region_name": "Russia"}
+            assert await service.add_subregion_by_region_name_and_coverage_zone_id(
+                coverage_zone_id, SubregionCreateByName(**subregion)
+            )
+        async with db_session.begin():
+            regions = await service.get_region_list_by_id(coverage_zone_id)
+            for region in regions:
+                if region.name_region == "Russia":
+                    assert len(region.subregion_list) == 2
+                    for subregion in region.subregion_list:
+                        assert subregion.name_subregion in ["Minsk", "Moscow"]
+
+    async def test_add_subregion_list(self, db_session):
+        service = create_coverage_zone_service(db_session)
+        coverage_zone_id = test_create_data[1].get("id")
+        region_service = create_region_service(db_session)
+        async with db_session.begin():
+            region_id = ((await region_service.get_region_by_name("Russia")).id,)
+            subregions = [
+                {"name_subregion": "test_subregion1", "id_region": region_id[0]},
+                {"name_subregion": "test_subregion2", "id_region": region_id[0]},
+                {"name_subregion": "test_subregion3", "id_region": region_id[0]},
+                {"name_subregion": "test_subregion4", "id_region": region_id[0]},
+            ]
+            subregions_add_model = [
+                SubregionCreate(**subregion) for subregion in subregions
+            ]
+            assert (
+                await service.add_subregions_by_coverage_zone_id(
+                    "coverage_zone_id_fake", subregions_add_model
+                )
+                is None
+            )
+        async with db_session.begin():
+            assert all(
+                await service.add_subregions_by_coverage_zone_id(
+                    coverage_zone_id, subregions_add_model
+                )
+            )
+
+        async with db_session.begin():
+            regions = await service.get_region_list_by_id(coverage_zone_id)
+            for region in regions:
+                if region.name_region == "Russia":
+                    assert len(region.subregion_list) == 6
+                    for subregion in region.subregion_list:
+                        assert subregion.name_subregion in [
+                            "Minsk",
+                            "Moscow",
+                            "test_subregion1",
+                            "test_subregion2",
+                            "test_subregion3",
+                            "test_subregion4",
+                        ]
 
     async def test_add_invalid_region(self, db_session):
         service = create_coverage_zone_service(db_session)

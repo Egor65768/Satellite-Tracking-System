@@ -15,6 +15,7 @@ from .region import (
     SubregionUpdate,
     ZoneRegionDetails,
     Subregion,
+    SubregionCreateByName,
 )
 from .common_attributes import Object_ID, PaginationBase, Object_str_ID
 from .coverage_zone import (
@@ -64,4 +65,5 @@ __all__ = [
     "SatelliteCharacteristicUpdate",
     "SatelliteCompleteUpdate",
     "NumberOfZones",
+    "SubregionCreateByName",
 ]

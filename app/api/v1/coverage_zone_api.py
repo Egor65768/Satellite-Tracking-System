@@ -8,7 +8,7 @@ from fastapi import (
     UploadFile,
     HTTPException,
 )
-from typing import Annotated, List
+from typing import Annotated, List, Union
 from app.api.v1.helpers import raise_if_object_none
 from app.schemas import (
     CoverageZoneInDB,
@@ -20,6 +20,7 @@ from app.schemas import (
     SubregionCreate,
     SubregionBase,
     CoverageZoneUpdate,
+    SubregionCreateByName,
 )
 from app.service import CoverageZoneService
 from app.api.v1.satellite_api import InternationalCode
@@ -290,19 +291,53 @@ async def delete_region_coverage_zone(
     },
 )
 async def add_subregion_by_coverage_zone_id(
-    subregion_data: SubregionCreate,
+    subregion_data: Union[SubregionCreate, SubregionCreateByName],
     coverage_zone_id: CoverageZoneId,
     _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
 ):
-    result = await coverage_zone_service.add_subregion_by_coverage_zone_id(
-        coverage_zone_id, subregion_data
-    )
+    if isinstance(subregion_data, SubregionCreate):
+        result = await coverage_zone_service.add_subregion_by_coverage_zone_id(
+            coverage_zone_id, subregion_data
+        )
+    else:
+        result = await coverage_zone_service.add_subregion_by_region_name_and_coverage_zone_id(
+            coverage_zone_id, subregion_data
+        )
     await raise_if_object_none(
         result,
         status.HTTP_409_CONFLICT,
         "The subregion cannot be added to this coverage area.",
     )
+
+
+@router.post(
+    path="/subregions/{coverage_zone_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Adds a subregions list to the coverage zone",
+    responses={
+        409: {"description": "The subregions cannot be added to this coverage zone."},
+        404: {"description": "Coverage zone not found"},
+        204: {"description": "The regions has been added to this coverage zone."},
+    },
+)
+async def add_subregions_by_coverage_zone_id(
+    subregions_data: List[SubregionCreate],
+    coverage_zone_id: CoverageZoneId,
+    _: None = Depends(valid_coverage_zone),
+    coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+):
+    result = await coverage_zone_service.add_subregions_by_coverage_zone_id(
+        coverage_zone_id, subregions_data
+    )
+    if not result or not all(result):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "The subregion cannot be added to this coverage area.",
+                "result": result,
+            },
+        )
 
 
 @router.delete(
