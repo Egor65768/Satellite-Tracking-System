@@ -10,6 +10,7 @@ from tests.test_data import (
     subregion_list,
 )
 from tests.test_service_coverage_zone import get_data_image
+from app.s3_service import S3Service
 
 
 @pytest.mark.asyncio
@@ -116,6 +117,34 @@ class TestCoverageZoneAPI:
             "/coverage_zone/", data=coverage_zone_data_request, files=files
         )
         assert response.status_code == status.HTTP_409_CONFLICT
+
+    @pytest.mark.asyncio
+    async def test_get_coverage_zone(self):
+        coverage_zone_data = test_create_data[0]
+        response = await self.client.get("/coverage_zone/invalid_id_coverage_zone")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+        response = await self.client.get(
+            f"/coverage_zone/{coverage_zone_data.get("id")}"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        response_data = response.json()
+
+        assert response_data is not None
+        assert response_data.get("id") == coverage_zone_data.get("id")
+        assert response_data.get("transmitter_type") == coverage_zone_data.get(
+            "transmitter_type"
+        )
+        assert response_data.get("satellite_code") == satellite_test_date[0].get(
+            "international_code"
+        )
+
+        s3_service = S3Service()
+        local_data = await get_data_image(coverage_zone_data.get("image"))
+        assert local_data is not None
+        s3_data = await s3_service.get_file(coverage_zone_data.get("id"))
+        assert s3_data is not None
+        assert s3_data == local_data
 
     @pytest.mark.asyncio
     async def test_add_region_by_coverage_zone(self):
@@ -366,6 +395,189 @@ class TestCoverageZoneAPI:
                     assert subregion.get("name_subregion") in ["Moscow"]
 
     @pytest.mark.asyncio
+    async def test_delete_region_coverage_zone(self):
+        coverage_zone_id_1 = test_create_data[0].get("id")
+        coverage_zone_id_2 = test_create_data[1].get("id")
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id_1}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list)
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id_2}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list) + len(region_test)
+
+        delete_data = {"name_region": "region_1"}
+        response = await self.client.delete(
+            f"/coverage_zone/{coverage_zone_id_1}/region_name/{delete_data.get("name_region")}"
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id_1}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list) - 1
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id_2}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_list) + len(region_test)
+
+        response = await self.client.delete(
+            f"/coverage_zone/{coverage_zone_id_1}/region_name/{delete_data.get("name_region")}"
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+
+        coverage_zone_id_fake = "fake_id_2u9u4flkd"
+        response = await self.client.delete(
+            f"/coverage_zone/{coverage_zone_id_fake}/region_name/{delete_data.get("name_region")}"
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.asyncio
+    async def test_delete_subregion_coverage_zone(self):
+        coverage_zone_id = "2121-1424-24270"
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        region_list_local = response.json()
+        for region in region_list_local:
+            if region.get("name_region") == "Russia":
+                assert len(region.get("subregion_list")) == 1
+                assert region.get("subregion_list")[0].get("name_subregion") == "Moscow"
+
+        delete_data = {"subname_region": "Moscow"}
+
+        coverage_zone_id_fake = "fake_id_fake_2131"
+        response = await self.client.delete(
+            f"/coverage_zone/{coverage_zone_id_fake}/subregion_name/{delete_data.get("subname_region")}"
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+        response = await self.client.delete(
+            f"/coverage_zone/{coverage_zone_id}/subregion_name/{delete_data.get("subname_region")}"
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        response = await self.client.delete(
+            f"/coverage_zone/{coverage_zone_id}/subregion_name/{delete_data.get("subname_region")}"
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        region_list_local = response.json()
+        for region in region_list_local:
+            if region.get("name_region") == "Russia":
+                assert len(region.get("subregion_list")) == 0
+
+    @pytest.mark.asyncio
+    async def test_update_coverage_zone_1(self):
+        s3_service = S3Service()
+        coverage_zone_data = test_create_data[1]
+        response = await self.client.get(
+            f"/coverage_zone/{coverage_zone_data.get("id")}"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        response_data = response.json()
+
+        assert response_data is not None
+        assert response_data.get("id") == coverage_zone_data.get("id")
+        assert response_data.get("transmitter_type") == coverage_zone_data.get(
+            "transmitter_type"
+        )
+        assert response_data.get("satellite_code") == satellite_test_date[0].get(
+            "international_code"
+        )
+
+        update_data = {"transmitter_type": "Tu-Band"}
+        response = await self.client.put(
+            f"/coverage_zone/{coverage_zone_data.get("id")}", data=update_data
+        )
+        assert response.status_code == status.HTTP_200_OK
+        response_data = response.json()
+        assert response_data.get("transmitter_type") == "Tu-Band"
+
+        response = await self.client.get(
+            f"/coverage_zone/{coverage_zone_data.get("id")}"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        response_data = response.json()
+
+        assert response_data is not None
+        assert response_data.get("id") == coverage_zone_data.get("id")
+        assert response_data.get("transmitter_type") == "Tu-Band"
+        assert response_data.get("satellite_code") == satellite_test_date[0].get(
+            "international_code"
+        )
+
+        local_data = await get_data_image(coverage_zone_data.get("image"))
+        assert local_data is not None
+        s3_data = await s3_service.get_file(coverage_zone_data.get("id"))
+        assert s3_data is not None
+        assert s3_data == local_data
+
+        image_new = "tests/test/test4.png"
+        local_data_image_new = await get_data_image(image_new)
+        files = {
+            "image": (
+                image_new,
+                local_data_image_new,
+                "image/png",
+            )
+        }
+        response = await self.client.put(
+            f"/coverage_zone/{coverage_zone_data.get("id")}", files=files
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        local_data = await get_data_image(image_new)
+        assert local_data is not None
+        s3_data = await s3_service.get_file(coverage_zone_data.get("id"))
+        assert s3_data is not None
+        assert s3_data == local_data
+
+    @pytest.mark.asyncio
+    async def test_update_coverage_zone_2(self):
+        s3_service = S3Service()
+        coverage_zone_data = test_create_data[1]
+        update_data = {
+            "transmitter_type": "Kuku-Band",
+            "satellite_code": satellite_test_date[1].get("international_code"),
+        }
+        image_new = "tests/test/test1.jpg"
+        local_data_image_new = await get_data_image(image_new)
+        files = {
+            "image": (
+                image_new,
+                local_data_image_new,
+                "image/png",
+            )
+        }
+        response = await self.client.put(
+            f"/coverage_zone/{coverage_zone_data.get("id")}",
+            data=update_data,
+            files=files,
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        response = await self.client.get(
+            f"/coverage_zone/{coverage_zone_data.get("id")}"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        response_data = response.json()
+
+        assert response_data is not None
+        assert response_data.get("id") == coverage_zone_data.get("id")
+        assert response_data.get("transmitter_type") == "Kuku-Band"
+        assert response_data.get("satellite_code") == satellite_test_date[1].get(
+            "international_code"
+        )
+
+        local_data = await get_data_image(image_new)
+        assert local_data is not None
+        s3_data = await s3_service.get_file(coverage_zone_data.get("id"))
+        assert s3_data is not None
+        assert s3_data == local_data
+
+    @pytest.mark.asyncio
     async def test_delete_coverage_zone(self):
         response = await self.client.get(
             "/coverage_zone/coverage_zones/count/",
@@ -378,10 +590,14 @@ class TestCoverageZoneAPI:
         )
         assert response.status_code == status.HTTP_200_OK
         zones = response.json()
+        zone_1_id = zones[0].get("id")
         for zone in zones:
             zone_id = zone.get("id")
             response = await self.client.delete(f"/coverage_zone/{zone_id}")
             assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        response = await self.client.delete(f"/coverage_zone/{zone_1_id}")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
         response = await self.client.get(
             "/coverage_zone/coverage_zones/count/",

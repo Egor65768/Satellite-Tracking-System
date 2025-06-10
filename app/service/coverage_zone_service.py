@@ -197,11 +197,12 @@ class CoverageZoneService:
         self, coverage_zone_id: str, coverage_zone_update: CoverageZoneUpdate
     ) -> Optional[CoverageZoneInDB]:
         coverage_zone_id = await self._get_validated_object_id(coverage_zone_id)
-        return (
-            await self.repository.update_model(coverage_zone_id, coverage_zone_update)
-            if coverage_zone_id is not None
-            else None
-        )
+        if coverage_zone_id is None:
+            return None
+        res = await self.repository.update_model(coverage_zone_id, coverage_zone_update)
+        if res:
+            await self.repository.session.commit()
+        return res
 
     async def delete_coverage_zone(self, coverage_zone_id: str) -> Optional[bool]:
         coverage_zone_id = await self._get_validated_object_id(coverage_zone_id)

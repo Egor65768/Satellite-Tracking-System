@@ -8,7 +8,7 @@ from fastapi import (
     UploadFile,
     HTTPException,
 )
-from typing import Annotated, List, Union
+from typing import Annotated, List, Union, Optional
 from app.api.v1.helpers import raise_if_object_none
 from app.schemas import (
     CoverageZoneInDB,
@@ -19,7 +19,6 @@ from app.schemas import (
     RegionBase,
     SubregionCreate,
     SubregionBase,
-    CoverageZoneUpdate,
     SubregionCreateByName,
 )
 from app.service import CoverageZoneService
@@ -28,9 +27,12 @@ from app.api.v1.satellite_api import InternationalCode
 router = APIRouter()
 from app.api.v1.helpers import (
     CoverageZoneId,
+    RegionName,
+    SubregionName,
     get_coverage_zone_service,
     valid_coverage_zone,
     valid_coverage_zone_create,
+    valid_coverage_zone_update,
 )
 
 
@@ -251,7 +253,7 @@ async def add_regions_by_coverage_zone_id(
 
 
 @router.delete(
-    "/region/{coverage_zone_id}",
+    "/{coverage_zone_id}/region_name/{region_name}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete region coverage zone",
     description="Returns nothing",
@@ -262,11 +264,12 @@ async def add_regions_by_coverage_zone_id(
     },
 )
 async def delete_region_coverage_zone(
-    region_data: RegionBase,
     coverage_zone_id: CoverageZoneId,
+    region_name: RegionName,
     _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
 ):
+    region_data = RegionBase(name_region=region_name)
     result = await coverage_zone_service.delete_region_by_coverage_zone(
         coverage_zone_id, region_data
     )
@@ -341,7 +344,7 @@ async def add_subregions_by_coverage_zone_id(
 
 
 @router.delete(
-    "/subregion/{coverage_zone_id}",
+    "/{coverage_zone_id}/subregion_name/{subregion_name}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete subregion coverage zone",
     description="Returns nothing",
@@ -352,11 +355,12 @@ async def add_subregions_by_coverage_zone_id(
     },
 )
 async def delete_subregion_coverage_zone(
-    subregion_data: SubregionBase,
+    subregion_name: SubregionName,
     coverage_zone_id: CoverageZoneId,
     _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
 ):
+    subregion_data = SubregionBase(name_subregion=subregion_name)
     result = await coverage_zone_service.delete_subregion_by_coverage_zone(
         coverage_zone_id, subregion_data
     )
@@ -379,13 +383,14 @@ async def delete_subregion_coverage_zone(
 )
 async def delete_coverage_zone(
     coverage_zone_id: CoverageZoneId,
+    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
 ):
     result = await coverage_zone_service.delete_coverage_zone(coverage_zone_id)
     await raise_if_object_none(
         result,
-        status.HTTP_404_NOT_FOUND,
-        "Coverage zone not found.",
+        status.HTTP_409_CONFLICT,
+        "Coverage zone cannot be deleted",
     )
 
 
@@ -404,11 +409,21 @@ async def delete_coverage_zone(
     },
 )
 async def update_coverage_zone(
-    coverage_zone_update: CoverageZoneUpdate,
     coverage_zone_id: CoverageZoneId,
-    _: None = Depends(valid_coverage_zone),
+    transmitter_type: Annotated[
+        Optional[str], Form(min_length=5, max_length=25, examples=["Ku-band"])
+    ] = None,
+    satellite_code: Annotated[
+        Optional[str], Form(min_length=5, max_length=50, examples=["123_A_123_A"])
+    ] = None,
+    image: Annotated[
+        Optional[UploadFile], File(description="Coverage zone image in JPEG/PNG format")
+    ] = None,
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
 ) -> CoverageZoneInDB:
+    coverage_zone_update = await valid_coverage_zone_update(
+        transmitter_type, satellite_code, image
+    )
     coverage_zone_updated = await coverage_zone_service.update_coverage_zone(
         coverage_zone_id, coverage_zone_update
     )

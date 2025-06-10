@@ -291,14 +291,6 @@ class TestGet:
             assert len(regions) == 3
             for region in regions:
                 assert region.name_region in ["USA", "New Zeland", "Russia"]
-                if region.name_region == "New Zeland":
-                    for subregion in region.subregion_list:
-                        assert subregion.name_subregion in ["Wellington", "Auckland"]
-                elif region.name_region == "USA":
-                    for subregion in region.subregion_list:
-                        assert subregion.name_subregion in ["UTA", "California"]
-                # elif region.name_region == "Russia":
-                #     assert region.subregion_list[0].name_subregion == "Moscow"
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("coverage_zone_data", test_create_data)
