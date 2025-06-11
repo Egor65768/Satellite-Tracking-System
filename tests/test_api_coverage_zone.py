@@ -199,6 +199,25 @@ class TestCoverageZoneAPI:
         assert len(response.json()) == len(region_test)
 
     @pytest.mark.asyncio
+    async def test_add_regions_list_by_coverage_zone_invalid(self):
+        coverage_zone_id = test_create_data[1].get("id")
+
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_test)
+        new_invalid_region = copy(region_list)
+        new_invalid_region.append(region_test[0])
+
+        response = await self.client.post(
+            f"/coverage_zone/regions/{coverage_zone_id}", json=region_test
+        )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == len(region_test)
+
+    @pytest.mark.asyncio
     async def test_add_region_2(self):
         coverage_zone_id_1 = test_create_data[0].get("id")
         coverage_zone_id_2 = test_create_data[1].get("id")
@@ -206,7 +225,7 @@ class TestCoverageZoneAPI:
             response = await self.client.post(
                 f"/coverage_zone/region/{coverage_zone_id_1}", json=region
             )
-            assert response.status_code == status.HTTP_204_NO_CONTENT
+            assert response.status_code == status.HTTP_409_CONFLICT
 
             response = await self.client.post(
                 f"/coverage_zone/region/{coverage_zone_id_2}", json=region
@@ -247,7 +266,6 @@ class TestCoverageZoneAPI:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == len(region_list) + len(region_test)
         region_list_local = response.json()
-        print(region_list_local)
         for region in region_list_local:
             if region.get("name_region") != "USA":
                 assert len(region.get("subregion_list")) == 0
@@ -261,7 +279,7 @@ class TestCoverageZoneAPI:
         response = await self.client.post(
             f"/coverage_zone/subregion/{coverage_zone_id}", json=data_subregion
         )
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_409_CONFLICT
 
         coverage_zone_id_invalid = "invalid_id_zone"
         response = await self.client.post(
@@ -304,6 +322,35 @@ class TestCoverageZoneAPI:
         region_list_local = response.json()
         for region in region_list_local:
             assert region.get("subregion_list") is not None
+
+    @pytest.mark.asyncio
+    async def test_add_subregion_by_coverage_zone_list_invalid(self):
+        coverage_zone_id = test_create_data[0].get("id")
+        response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
+        regions_list_local = response.json()
+        assert response.status_code == status.HTTP_200_OK
+        assert len(regions_list_local) != 0
+        region = regions_list_local[0]
+        assert region is not None
+        assert len(region.get("subregion_list")) != 0
+        subregion_name = region.get("subregion_list")[0].get("name_subregion")
+        region_id = region.get("id")
+        new_subregions_data = [
+            {"name_subregion": subregion_name, "id_region": region_id},
+            {"name_subregion": "new_subregion_test_1", "id_region": region_id},
+            {"name_subregion": "new_subregion_test_2", "id_region": region_id},
+            {"name_subregion": "new_subregion_test_3", "id_region": region_id},
+        ]
+        response = await self.client.post(
+            f"/coverage_zone/subregions/{coverage_zone_id}", json=new_subregions_data
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+        result = response.json().get("detail").get("result")
+        for i, r in enumerate(result):
+            if i == 0:
+                assert not r
+            else:
+                assert r
 
     @pytest.mark.asyncio
     async def test_add_subregion_by_coverage_zone_2(self):

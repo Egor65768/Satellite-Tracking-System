@@ -103,7 +103,7 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
 
     async def _add_region(self, region: RegionBase, zone_db: CoverageZone):
         if any(region.name_region == r.name_region for r in zone_db.regions):
-            return True
+            return False
         db_region = (
             await self.session.execute(
                 select(Region).where(Region.name_region == region.name_region)
@@ -169,7 +169,7 @@ class CoverageZoneRepository(BaseRepository[CoverageZone]):
             if r.id == subregion.id_region
             for s in r.subregions
         ):
-            return True
+            return False
         if not any(subregion.id_region == r.id for r in zone_db.regions):
             region_db: Optional[Region] = await self.session.get(
                 Region, subregion.id_region

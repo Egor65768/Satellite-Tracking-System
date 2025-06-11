@@ -250,7 +250,13 @@ class TestCreate:
             region_1 = RegionBase(name_region="USA")
             coverage_zone_data = test_create_data[0]
             coverage_zone_id = coverage_zone_data.get("id")
-            assert await service.add_region_by_coverage_zone_id(
+            regions = await service.get_region_list_by_id(coverage_zone_id)
+            res = False
+            for region in regions:
+                if region.name_region == "USA":
+                    res = True
+            assert res
+            assert not await service.add_region_by_coverage_zone_id(
                 coverage_zone_id, region_1
             )
 

@@ -12,3 +12,15 @@ style:
 
 run_server:
 	uvicorn app.main:app --reload
+
+swagger:
+	@echo "Opening Swagger UI..."
+	xdg-open http://localhost:8000/docs
+
+
+install:
+	pip install -r requirements.txt
+
+install-env:
+	if [ ! -d "venv" ]; then python3 -m venv venv; fi
+	. venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt

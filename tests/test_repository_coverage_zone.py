@@ -270,7 +270,7 @@ class TestZoneRelationship:
             assert await repo.add_region(region_1, zone_2_id)
             assert len(await repo_region.get_models(PaginationBase())) == 4
             assert len(await repo.get_region_list(zone_2_id)) == 1
-            assert await repo.add_region(region_1, zone_2_id)
+            assert not await repo.add_region(region_1, zone_2_id)
             assert len(await repo_region.get_models(PaginationBase())) == 4
             assert len(await repo.get_region_list(zone_2_id)) == 1
         async with db_session.begin():

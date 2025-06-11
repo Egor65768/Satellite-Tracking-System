@@ -166,7 +166,12 @@ async def get_number_of_coverage_zones(
     summary="Create coverage zone",
     description="Returns the coverage zone if created successfully",
     responses={
-        409: {"description": "Coverage zone has not been created"},
+        409: {
+            "description": "Coverage zone has not been created."
+            "Check the coverage zone id or satellite code."
+            "Perhaps the satellite with this code does not "
+            "exist or the zone with this id has already been created"
+        },
         200: {"description": "Coverage zone create", "model": CoverageZoneInDB},
     },
 )
@@ -192,7 +197,12 @@ async def create_coverage_zone(
         coverage_zone_create
     )
     await raise_if_object_none(
-        coverage_zone, status.HTTP_409_CONFLICT, "Coverage zone has not been created"
+        coverage_zone,
+        status.HTTP_409_CONFLICT,
+        "Coverage zone has not been created."
+        "Check the coverage zone id or satellite code."
+        "Perhaps the satellite with this code does not "
+        "exist or the zone with this id has already been created",
     )
     return coverage_zone
 
@@ -244,7 +254,7 @@ async def add_regions_by_coverage_zone_id(
     )
     if not result or not all(result):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_409_CONFLICT,
             detail={
                 "message": "The region cannot be added to this coverage area.",
                 "result": result,
@@ -294,7 +304,7 @@ async def delete_region_coverage_zone(
     },
 )
 async def add_subregion_by_coverage_zone_id(
-    subregion_data: Union[SubregionCreate, SubregionCreateByName],
+    subregion_data: Union[SubregionCreateByName, SubregionCreate],
     coverage_zone_id: CoverageZoneId,
     _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
@@ -335,7 +345,7 @@ async def add_subregions_by_coverage_zone_id(
     )
     if not result or not all(result):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_409_CONFLICT,
             detail={
                 "message": "The subregion cannot be added to this coverage area.",
                 "result": result,

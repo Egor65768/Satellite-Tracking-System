@@ -25,7 +25,7 @@ class SatelliteBase(BaseModel):
         ...,
         description="Дата запуска",
         json_schema_extra={
-            "example": "2002-12-7",
+            "example": "2002-12-07",
         },
     )
     country_id: int = Field(
