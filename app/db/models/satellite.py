@@ -18,7 +18,7 @@ class Satellite(Base):
         String(100), nullable=False, unique=True
     )
     norad_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
-    launch_date: Mapped[date] = mapped_column(Date)
+    launch_date: Mapped[date] = mapped_column(Date, nullable=False)
     country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable=False)
     country: Mapped["Country"] = relationship(
         "Country", lazy="joined", back_populates="satellites"
