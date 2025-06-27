@@ -1,6 +1,6 @@
 import pytest
 from fastapi import status
-from tests.test_data import user_data_tests, user_data_admin, admin_data
+from tests.test_data import user_data_tests, user_data_admin
 from app.core import settings
 from app.schemas import AdminPassword
 

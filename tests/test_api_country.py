@@ -1,41 +1,6 @@
 import pytest
-from fastapi import status
-from tests.test_data import country_test_data, token_data, admin_data, headers_auth
-from app.schemas import CountryInDB, AdminPassword
-from app.core import settings
-
-
-# @pytest.mark.asyncio
-# async def test_create_user(async_client):
-#     admin_password = AdminPassword(password=settings.ADMIN_SECRET_KEY)
-#     response = await async_client.post(
-#         "/user/",
-#         json={
-#             "user_create": admin_data,
-#             "admin_password": admin_password.model_dump(),
-#         },
-#     )
-#     assert response.status_code == status.HTTP_200_OK
-#
-#
-# @pytest.mark.asyncio
-# async def test_create_token(async_client):
-#     login_data = {
-#         "username": admin_data.get("email"),
-#         "password": admin_data.get("password"),
-#     }
-#     response = await async_client.post(
-#         "/auth/tokens",
-#         data=login_data,
-#     )
-#     assert response.status_code == status.HTTP_200_OK
-#     data_t = response.json()
-#     assert data_t
-#     token_data["access_token"] = data_t.get("access_token")
-#     token_data["refresh_token"] = data_t.get("refresh_token")
-#     token_data["token_type"] = data_t.get("token_type")
-#     headers_auth["Authorization"] = f"Bearer {token_data['access_token']}"
-#
+from tests.test_data import country_test_data, headers_auth
+from app.schemas import CountryInDB
 
 
 @pytest.mark.usefixtures("async_client")

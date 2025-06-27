@@ -2,7 +2,7 @@ from .repository import BaseRepository
 from app.db import RefreshToken
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import RefreshTokenInDB, Object_ID
-from typing import Optional, List
+from typing import List
 from sqlalchemy import select, delete
 from datetime import datetime, timezone
 
