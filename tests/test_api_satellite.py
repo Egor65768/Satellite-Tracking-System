@@ -6,6 +6,7 @@ from tests.test_data import (
     country_test_data,
     satellite_test_date,
     satellite_characteristic_test_date,
+    headers_auth,
 )
 from copy import copy
 
@@ -18,7 +19,9 @@ async def test_check_count_country_1(async_client):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("country_data", country_test_data)
 async def test_create_and_get_country_by_id(country_data, async_client):
-    create_response = await async_client.post("/country/", json=country_data)
+    create_response = await async_client.post(
+        "/country/", json=country_data, headers=headers_auth
+    )
     assert create_response.status_code == 200
 
 
@@ -362,7 +365,9 @@ class TestSatelliteAPI:
         sat = response.json()
         sat_county_id = sat[0].get("country_id")
 
-        delete_response = await self.client.delete(f"/country/{sat_county_id}")
+        delete_response = await self.client.delete(
+            f"/country/{sat_county_id}", headers=headers_auth
+        )
         assert delete_response.status_code == status.HTTP_409_CONFLICT
 
     @pytest.mark.asyncio
@@ -393,7 +398,9 @@ async def test_delete_country(async_client):
     assert len(country_list) == 3
     for country in country_list:
         country_id = country["id"]
-        delete_response = await async_client.delete(f"/country/{country_id}")
+        delete_response = await async_client.delete(
+            f"/country/{country_id}", headers=headers_auth
+        )
         assert delete_response.status_code == 204
     create_response = await async_client.get("/country/list/")
     assert create_response.status_code == 200

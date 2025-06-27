@@ -1,19 +1,15 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
+from .dependencies import get_auth_request, oauth2_scheme_refresh
 from app.core import (
-    get_db,
     RefreshTokenExpiredError,
     InvalidRefreshToken,
     RefreshTokenNotFoundError,
 )
-from app.service import create_token_service, create_user_service
-from app.schemas import (
-    Token,
-)
+from app.schemas import Token
 from app.core import InvalidPasswordError, EmailNotFoundError
-from .dependencies import get_auth_request, oauth2_scheme_refresh
-from app.api.v1.helpers import raise_if_object_none
+from app.service import UserService, TokenService
+from app.api.v1.helpers import raise_if_object_none, get_token_service, get_user_service
 
 router = APIRouter()
 
@@ -30,9 +26,9 @@ router = APIRouter()
 )
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
+    token_service: TokenService = Depends(get_token_service),
 ):
-    user_service = create_user_service(db)
     user_id = None
     try:
         user_id = await user_service.authenticate_user(get_auth_request(form_data))
@@ -44,8 +40,6 @@ async def login_for_access_token(
         await raise_if_object_none(
             None, status_code=status.HTTP_401_UNAUTHORIZED, detail="Email not found"
         )
-
-    token_service = create_token_service(db)
     tokens = await token_service.create_tokens(user_id=user_id, data_dict={})
     return tokens
 
@@ -63,12 +57,10 @@ async def login_for_access_token(
 )
 async def refresh_tokens(
     refresh_token: str = Depends(oauth2_scheme_refresh),
-    db: AsyncSession = Depends(get_db),
+    token_service: TokenService = Depends(get_token_service),
 ):
-    token_service = create_token_service(db)
     try:
         user_id = await token_service.decode_and_verify_refresh_token(refresh_token)
-        token_service = create_token_service(db)
         if not await token_service.delete_refresh_token(refresh_token):
             raise InvalidRefreshToken()
         tokens = await token_service.create_tokens(user_id=user_id, data_dict={})

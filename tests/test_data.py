@@ -192,3 +192,6 @@ user_data_tests = [
         "password": "rwhjGDUu8842gfguc",
     },
 ]
+
+token_data = dict()
+headers_auth = dict()

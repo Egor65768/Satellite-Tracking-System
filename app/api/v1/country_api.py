@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Path, Depends, status, Query
 from typing import Annotated, List
-from app.core import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.service import create_country_service, CountryService
+from app.service import CountryService
 from app.schemas import (
     CountryInDB,
     CountryCreate,
@@ -10,7 +8,7 @@ from app.schemas import (
     CountryUpdate,
     SatelliteInDB,
 )
-from app.api.v1.helpers import raise_if_object_none
+from app.api.v1.helpers import raise_if_object_none, get_country_service
 from app.api.v1.auth import get_current_user
 
 router = APIRouter()
@@ -25,10 +23,6 @@ Abbreviation = Annotated[
         description="Filter by country abbreviation",
     ),
 ]
-
-
-async def get_country_service(db: AsyncSession = Depends(get_db)):
-    return create_country_service(db)
 
 
 @router.get(
@@ -82,6 +76,7 @@ async def get_country_by_abbreviation(
 async def create_country(
     country_create: CountryCreate,
     country_service=Depends(get_country_service),
+    _=Depends(get_current_user),
 ) -> CountryInDB:
     country = await country_service.create_country(country_create)
     await raise_if_object_none(
@@ -103,6 +98,7 @@ async def create_country(
 async def delete_by_id(
     country_id: CountryID,
     country_service: CountryService = Depends(get_country_service),
+    _=Depends(get_current_user),
 ):
     await raise_if_object_none(
         await country_service.get_country(country_id),
@@ -152,6 +148,7 @@ async def update_country(
     country_update: CountryUpdate,
     country_id: CountryID,
     country_service=Depends(get_country_service),
+    _=Depends(get_current_user),
 ) -> CountryInDB:
     await raise_if_object_none(
         await country_service.get_country(country_id),

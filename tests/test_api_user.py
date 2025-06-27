@@ -1,6 +1,6 @@
 import pytest
 from fastapi import status
-from tests.test_data import user_data_tests, user_data_admin
+from tests.test_data import user_data_tests, user_data_admin, admin_data
 from app.core import settings
 from app.schemas import AdminPassword
 
@@ -67,7 +67,7 @@ class TestUserAPI:
         )
         assert get_response.status_code == status.HTTP_200_OK
         users = get_response.json()
-        assert len(users) == len(user_data_tests)
+        assert len(users) == len(user_data_tests) + 1
 
     @pytest.mark.asyncio
     async def test_create_4_admin(self):
@@ -86,7 +86,7 @@ class TestUserAPI:
         )
         assert get_response.status_code == status.HTTP_200_OK
         users = get_response.json()
-        assert len(users) == len(user_data_tests) + 1
+        assert len(users) == len(user_data_tests) + 1 + 1
 
     @pytest.mark.asyncio
     async def test_delete_admin(self):
@@ -95,7 +95,7 @@ class TestUserAPI:
         )
         assert get_response.status_code == status.HTTP_200_OK
         users = get_response.json()
-        assert len(users) == len(user_data_tests) + 1
+        assert len(users) == len(user_data_tests) + 1 + 1
 
         delete_response = await self.client.delete(
             "/user/", params={"user_mail": user_data_admin.get("email")}
@@ -107,7 +107,7 @@ class TestUserAPI:
         )
         assert get_response.status_code == status.HTTP_200_OK
         users = get_response.json()
-        assert len(users) == len(user_data_tests)
+        assert len(users) == len(user_data_tests) + 1
 
     @pytest.mark.asyncio
     async def test_delete_users(self):
@@ -116,8 +116,8 @@ class TestUserAPI:
         )
         assert get_response.status_code == status.HTTP_200_OK
         users = get_response.json()
-        assert len(users) == len(user_data_tests)
-        for user in users:
+        assert len(users) == len(user_data_tests) + 1
+        for user in user_data_tests:
             user_email = user.get("email")
             delete_response = await self.client.delete(
                 "/user/", params={"user_mail": user_email}
@@ -128,7 +128,7 @@ class TestUserAPI:
         )
         assert get_response.status_code == status.HTTP_200_OK
         users = get_response.json()
-        assert len(users) == 0
+        assert len(users) == 1
 
         delete_response = await self.client.delete(
             "/user/", params={"user_mail": "not_found_email@mail.ru"}

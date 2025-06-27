@@ -37,7 +37,7 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="The access token contains a non-existent user ID",
             )
-        if user_in_db.role != UserRole.ADMIN.value():
+        if user_in_db.role != UserRole.ADMIN.value:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",

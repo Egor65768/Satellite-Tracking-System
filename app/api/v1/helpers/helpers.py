@@ -6,6 +6,8 @@ from app.service import (
     create_user_service,
     create_region_service,
     create_satellite_service,
+    create_country_service,
+    create_token_service,
 )
 
 
@@ -28,3 +30,11 @@ async def get_region_service(db: AsyncSession = Depends(get_db)):
 
 async def get_satellite_service(db: AsyncSession = Depends(get_db)):
     return create_satellite_service(db)
+
+
+async def get_country_service(db: AsyncSession = Depends(get_db)):
+    return create_country_service(db)
+
+
+async def get_token_service(db: AsyncSession = Depends(get_db)):
+    return create_token_service(db)

@@ -4,6 +4,8 @@ from .helpers import (
     get_user_service,
     get_region_service,
     get_satellite_service,
+    get_country_service,
+    get_token_service,
 )
 from .helpers_coverage_zone import (
     CoverageZoneId,
@@ -26,4 +28,6 @@ __all__ = [
     "get_user_service",
     "get_region_service",
     "get_satellite_service",
+    "get_country_service",
+    "get_token_service",
 ]
