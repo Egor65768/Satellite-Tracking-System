@@ -1,6 +1,6 @@
 import pytest
 from app.schemas import RegionInDB, SubregionInDB
-from tests.test_data import region_test, test_subregion
+from tests.test_data import region_test, test_subregion, headers_auth
 from fastapi import status
 
 
@@ -46,7 +46,9 @@ class TestRegionAPI:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("region_data", region_test)
     async def test_create_and_get_region(self, region_data):
-        response = await self.client.post(f"/region/", json=region_data)
+        response = await self.client.post(
+            f"/region/", json=region_data, headers=headers_auth
+        )
         assert response.status_code == status.HTTP_200_OK
 
         get_response = await self.client.get(
@@ -69,7 +71,9 @@ class TestRegionAPI:
             f"/region/name/{subregion_data.get("name_region")}"
         )
         subregion_data["id_region"] = get_response.json().get("id")
-        response = await self.client.post(f"/region/subregion", json=subregion_data)
+        response = await self.client.post(
+            f"/region/subregion", json=subregion_data, headers=headers_auth
+        )
         assert response.status_code == status.HTTP_200_OK
 
         get_response = await self.client.get(
@@ -95,7 +99,7 @@ class TestRegionAPI:
         update_data = {"name_region": "US"}
 
         update_response = await self.client.put(
-            f"/region/{region_id}", json=update_data
+            f"/region/{region_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_200_OK
         update_region = RegionInDB(**update_response.json())
@@ -117,7 +121,7 @@ class TestRegionAPI:
         region_id = region.id
         update_data = {"name_region": "Russia"}
         update_response = await self.client.put(
-            f"/region/{region_id}", json=update_data
+            f"/region/{region_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_409_CONFLICT
 
@@ -129,7 +133,7 @@ class TestRegionAPI:
 
         region_id = 1101
         update_response = await self.client.put(
-            f"/region/{region_id}", json=update_data
+            f"/region/{region_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -144,7 +148,7 @@ class TestRegionAPI:
 
         update_data = {"name_subregion": "UTA"}
         update_response = await self.client.put(
-            f"/region/subregion/{subregion_id}", json=update_data
+            f"/region/subregion/{subregion_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_200_OK
         update_subregion = SubregionInDB(**update_response.json())
@@ -167,7 +171,7 @@ class TestRegionAPI:
 
         update_data = {"id_region": region_russia_id}
         update_response = await self.client.put(
-            f"/region/subregion/{subregion_id}", json=update_data
+            f"/region/subregion/{subregion_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_200_OK
         update_subregion = SubregionInDB(**update_response.json())
@@ -184,7 +188,7 @@ class TestRegionAPI:
 
         update_data = {"id_region": region_id, "name_subregion": "Texas"}
         update_response = await self.client.put(
-            f"/region/subregion/{subregion_id}", json=update_data
+            f"/region/subregion/{subregion_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_200_OK
         update_subregion = SubregionInDB(**update_response.json())
@@ -209,24 +213,24 @@ class TestRegionAPI:
 
         update_data = {}
         update_response = await self.client.put(
-            f"/region/subregion/{subregion_id}", json=update_data
+            f"/region/subregion/{subregion_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_409_CONFLICT
 
         update_data = {"name_subregion": "Florida"}
         update_response = await self.client.put(
-            f"/region/subregion/{subregion_id}", json=update_data
+            f"/region/subregion/{subregion_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_409_CONFLICT
 
         update_response = await self.client.put(
-            "/region/subregion/1011", json=update_data
+            "/region/subregion/1011", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_404_NOT_FOUND
 
         update_data = {"id_region": 1131}
         update_response = await self.client.put(
-            f"/region/subregion/{subregion_id}", json=update_data
+            f"/region/subregion/{subregion_id}", json=update_data, headers=headers_auth
         )
         assert update_response.status_code == status.HTTP_409_CONFLICT
 
@@ -235,7 +239,9 @@ class TestRegionAPI:
         # Мы можем удалить регион даже если у него есть субрегион. Он будет удален вместе с регионом
         region = (await self.client.get("/region/name/Russia")).json()
         assert region
-        response = await self.client.delete(f"/region/{region.get("id")}")
+        response = await self.client.delete(
+            f"/region/{region.get("id")}", headers=headers_auth
+        )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     @pytest.mark.asyncio
@@ -245,7 +251,9 @@ class TestRegionAPI:
         for subregion in subregions:
             subregion_id = subregion.get("id")
             print(subregion_id)
-            response = await self.client.delete(f"/region/subregion/{subregion_id}")
+            response = await self.client.delete(
+                f"/region/subregion/{subregion_id}", headers=headers_auth
+            )
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
         regions = (await self.client.get("/region/subregions/")).json()
@@ -256,7 +264,9 @@ class TestRegionAPI:
         regions = (await self.client.get("/region/regions/")).json()
         assert len(regions) != 0
         for region in regions:
-            response = await self.client.delete(f"/region/{region.get("id")}")
+            response = await self.client.delete(
+                f"/region/{region.get("id")}", headers=headers_auth
+            )
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
         regions = (await self.client.get("/region/regions/")).json()

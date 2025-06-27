@@ -76,7 +76,7 @@ async def get_country_by_abbreviation(
 async def create_country(
     country_create: CountryCreate,
     country_service=Depends(get_country_service),
-    _=Depends(get_current_user),
+    _auth=Depends(get_current_user),
 ) -> CountryInDB:
     country = await country_service.create_country(country_create)
     await raise_if_object_none(
@@ -98,7 +98,7 @@ async def create_country(
 async def delete_by_id(
     country_id: CountryID,
     country_service: CountryService = Depends(get_country_service),
-    _=Depends(get_current_user),
+    _auth=Depends(get_current_user),
 ):
     await raise_if_object_none(
         await country_service.get_country(country_id),
@@ -148,7 +148,7 @@ async def update_country(
     country_update: CountryUpdate,
     country_id: CountryID,
     country_service=Depends(get_country_service),
-    _=Depends(get_current_user),
+    _auth=Depends(get_current_user),
 ) -> CountryInDB:
     await raise_if_object_none(
         await country_service.get_country(country_id),

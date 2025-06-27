@@ -43,7 +43,9 @@ async def test_check_count_satellite_1(async_client):
 async def test_create_satellite(satellite_date, async_client):
     satellite_date_test = copy(satellite_date)
     satellite_date_test["launch_date"] = satellite_date.get("launch_date").isoformat()
-    create_response = await async_client.post("/satellite/", json=satellite_date_test)
+    create_response = await async_client.post(
+        "/satellite/", json=satellite_date_test, headers=headers_auth
+    )
     assert create_response.status_code == 200
 
 
@@ -112,12 +114,18 @@ class TestCoverageZoneAPI:
             )
         }
         response = await self.client.post(
-            "/coverage_zone/", data=coverage_zone_data_request, files=files
+            "/coverage_zone/",
+            data=coverage_zone_data_request,
+            files=files,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_200_OK
 
         response = await self.client.post(
-            "/coverage_zone/", data=coverage_zone_data_request, files=files
+            "/coverage_zone/",
+            data=coverage_zone_data_request,
+            files=files,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_409_CONFLICT
 
@@ -155,7 +163,9 @@ class TestCoverageZoneAPI:
         coverage_zone_id = test_create_data[0].get("id")
 
         response = await self.client.post(
-            f"/coverage_zone/region/invalid_id", json=region_list[0]
+            f"/coverage_zone/region/invalid_id",
+            json=region_list[0],
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -164,7 +174,9 @@ class TestCoverageZoneAPI:
         assert len(response.json()) == 0
         for region in region_list:
             response = await self.client.post(
-                f"/coverage_zone/region/{coverage_zone_id}", json=region
+                f"/coverage_zone/region/{coverage_zone_id}",
+                json=region,
+                headers=headers_auth,
             )
             assert response.status_code == status.HTTP_204_NO_CONTENT
         response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
@@ -184,7 +196,7 @@ class TestCoverageZoneAPI:
         coverage_zone_id = test_create_data[1].get("id")
 
         response = await self.client.post(
-            f"/coverage_zone/regions/invalid_id", json=region_test
+            f"/coverage_zone/regions/invalid_id", json=region_test, headers=headers_auth
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -193,7 +205,9 @@ class TestCoverageZoneAPI:
         assert len(response.json()) == 0
 
         response = await self.client.post(
-            f"/coverage_zone/regions/{coverage_zone_id}", json=region_test
+            f"/coverage_zone/regions/{coverage_zone_id}",
+            json=region_test,
+            headers=headers_auth,
         )
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -212,7 +226,9 @@ class TestCoverageZoneAPI:
         new_invalid_region.append(region_test[0])
 
         response = await self.client.post(
-            f"/coverage_zone/regions/{coverage_zone_id}", json=region_test
+            f"/coverage_zone/regions/{coverage_zone_id}",
+            json=region_test,
+            headers=headers_auth,
         )
 
         assert response.status_code == status.HTTP_409_CONFLICT
@@ -226,12 +242,16 @@ class TestCoverageZoneAPI:
         coverage_zone_id_2 = test_create_data[1].get("id")
         for region in region_list:
             response = await self.client.post(
-                f"/coverage_zone/region/{coverage_zone_id_1}", json=region
+                f"/coverage_zone/region/{coverage_zone_id_1}",
+                json=region,
+                headers=headers_auth,
             )
             assert response.status_code == status.HTTP_409_CONFLICT
 
             response = await self.client.post(
-                f"/coverage_zone/region/{coverage_zone_id_2}", json=region
+                f"/coverage_zone/region/{coverage_zone_id_2}",
+                json=region,
+                headers=headers_auth,
             )
             assert response.status_code == status.HTTP_204_NO_CONTENT
         response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id_1}")
@@ -261,7 +281,9 @@ class TestCoverageZoneAPI:
             "id_region": (await self.client.get(f"/region/name/USA")).json().get("id"),
         }
         response = await self.client.post(
-            f"/coverage_zone/subregion/{coverage_zone_id}", json=data_subregion
+            f"/coverage_zone/subregion/{coverage_zone_id}",
+            json=data_subregion,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -280,13 +302,17 @@ class TestCoverageZoneAPI:
                 )
 
         response = await self.client.post(
-            f"/coverage_zone/subregion/{coverage_zone_id}", json=data_subregion
+            f"/coverage_zone/subregion/{coverage_zone_id}",
+            json=data_subregion,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_409_CONFLICT
 
         coverage_zone_id_invalid = "invalid_id_zone"
         response = await self.client.post(
-            f"/coverage_zone/subregion/{coverage_zone_id_invalid}", json=data_subregion
+            f"/coverage_zone/subregion/{coverage_zone_id_invalid}",
+            json=data_subregion,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -315,7 +341,9 @@ class TestCoverageZoneAPI:
                 }
             )
         response = await self.client.post(
-            f"/coverage_zone/subregions/{coverage_zone_id}", json=create_subregion_data
+            f"/coverage_zone/subregions/{coverage_zone_id}",
+            json=create_subregion_data,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -345,7 +373,9 @@ class TestCoverageZoneAPI:
             {"name_subregion": "new_subregion_test_3", "id_region": region_id},
         ]
         response = await self.client.post(
-            f"/coverage_zone/subregions/{coverage_zone_id}", json=new_subregions_data
+            f"/coverage_zone/subregions/{coverage_zone_id}",
+            json=new_subregions_data,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_409_CONFLICT
         result = response.json().get("detail").get("result")
@@ -370,7 +400,10 @@ class TestCoverageZoneAPI:
             )
         }
         response = await self.client.post(
-            "/coverage_zone/", data=coverage_zone_data_request, files=files
+            "/coverage_zone/",
+            data=coverage_zone_data_request,
+            files=files,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_200_OK
         coverage_zone_id = "2121-1424-24270"
@@ -383,7 +416,9 @@ class TestCoverageZoneAPI:
 
         for region in region_list_test:
             response = await self.client.post(
-                f"/coverage_zone/region/{coverage_zone_id}", json=region
+                f"/coverage_zone/region/{coverage_zone_id}",
+                json=region,
+                headers=headers_auth,
             )
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -421,7 +456,9 @@ class TestCoverageZoneAPI:
         ]
         for subregion in subregion_data:
             response = await self.client.post(
-                f"/coverage_zone/subregion/{coverage_zone_id}", json=subregion
+                f"/coverage_zone/subregion/{coverage_zone_id}",
+                json=subregion,
+                headers=headers_auth,
             )
             assert response.status_code == status.HTTP_204_NO_CONTENT
         response = await self.client.get(f"/coverage_zone/regions/{coverage_zone_id}")
@@ -459,7 +496,8 @@ class TestCoverageZoneAPI:
 
         delete_data = {"name_region": "region_1"}
         response = await self.client.delete(
-            f"/coverage_zone/{coverage_zone_id_1}/region_name/{delete_data.get("name_region")}"
+            f"/coverage_zone/{coverage_zone_id_1}/region_name/{delete_data.get("name_region")}",
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -472,13 +510,15 @@ class TestCoverageZoneAPI:
         assert len(response.json()) == len(region_list) + len(region_test)
 
         response = await self.client.delete(
-            f"/coverage_zone/{coverage_zone_id_1}/region_name/{delete_data.get("name_region")}"
+            f"/coverage_zone/{coverage_zone_id_1}/region_name/{delete_data.get("name_region")}",
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_409_CONFLICT
 
         coverage_zone_id_fake = "fake_id_2u9u4flkd"
         response = await self.client.delete(
-            f"/coverage_zone/{coverage_zone_id_fake}/region_name/{delete_data.get("name_region")}"
+            f"/coverage_zone/{coverage_zone_id_fake}/region_name/{delete_data.get("name_region")}",
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -497,17 +537,20 @@ class TestCoverageZoneAPI:
 
         coverage_zone_id_fake = "fake_id_fake_2131"
         response = await self.client.delete(
-            f"/coverage_zone/{coverage_zone_id_fake}/subregion_name/{delete_data.get("subname_region")}"
+            f"/coverage_zone/{coverage_zone_id_fake}/subregion_name/{delete_data.get("subname_region")}",
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
         response = await self.client.delete(
-            f"/coverage_zone/{coverage_zone_id}/subregion_name/{delete_data.get("subname_region")}"
+            f"/coverage_zone/{coverage_zone_id}/subregion_name/{delete_data.get("subname_region")}",
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         response = await self.client.delete(
-            f"/coverage_zone/{coverage_zone_id}/subregion_name/{delete_data.get("subname_region")}"
+            f"/coverage_zone/{coverage_zone_id}/subregion_name/{delete_data.get("subname_region")}",
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_409_CONFLICT
 
@@ -539,7 +582,9 @@ class TestCoverageZoneAPI:
 
         update_data = {"transmitter_type": "Tu-Band"}
         response = await self.client.put(
-            f"/coverage_zone/{coverage_zone_data.get("id")}", data=update_data
+            f"/coverage_zone/{coverage_zone_data.get("id")}",
+            data=update_data,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_200_OK
         response_data = response.json()
@@ -574,7 +619,9 @@ class TestCoverageZoneAPI:
             )
         }
         response = await self.client.put(
-            f"/coverage_zone/{coverage_zone_data.get("id")}", files=files
+            f"/coverage_zone/{coverage_zone_data.get("id")}",
+            files=files,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_200_OK
 
@@ -605,6 +652,7 @@ class TestCoverageZoneAPI:
             f"/coverage_zone/{coverage_zone_data.get("id")}",
             data=update_data,
             files=files,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_200_OK
 
@@ -643,10 +691,14 @@ class TestCoverageZoneAPI:
         zone_1_id = zones[0].get("id")
         for zone in zones:
             zone_id = zone.get("id")
-            response = await self.client.delete(f"/coverage_zone/{zone_id}")
+            response = await self.client.delete(
+                f"/coverage_zone/{zone_id}", headers=headers_auth
+            )
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
-        response = await self.client.delete(f"/coverage_zone/{zone_1_id}")
+        response = await self.client.delete(
+            f"/coverage_zone/{zone_1_id}", headers=headers_auth
+        )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
         response = await self.client.get(
@@ -664,7 +716,9 @@ async def test_delete_satellite(async_client):
     assert len(satellite_list) == len(satellite_test_date)
     for satellite in satellite_list:
         satellite_id = satellite["international_code"]
-        delete_response = await async_client.delete(f"/satellite/{satellite_id}")
+        delete_response = await async_client.delete(
+            f"/satellite/{satellite_id}", headers=headers_auth
+        )
         assert delete_response.status_code == 204
     create_response = await async_client.get("/satellite/list/")
     assert create_response.status_code == 200
@@ -696,7 +750,9 @@ async def test_delete_region(async_client):
     assert len(regions) != 0
     for region in regions:
         print(region.get("name_region"))
-        response = await async_client.delete(f"/region/{region.get("id")}")
+        response = await async_client.delete(
+            f"/region/{region.get("id")}", headers=headers_auth
+        )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     regions = (await async_client.get("/region/regions/")).json()

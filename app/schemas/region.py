@@ -14,7 +14,9 @@ class RegionCreate(RegionBase):
     """Схема для создания региона. Наследует все поля RegionBase."""
 
     id: Optional[int] = Field(
-        None, description="ID региона. Оставьте None для автоинкремента."
+        None,
+        description="ID региона. Оставьте None для автоинкремента.",
+        json_schema_extra={"example": 14},
     )
 
 

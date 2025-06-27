@@ -11,10 +11,12 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-oauth2_scheme_access = OAuth2PasswordBearer(tokenUrl="token", scheme_name="AccessToken")
+oauth2_scheme_access = OAuth2PasswordBearer(
+    tokenUrl="auth/tokens", scheme_name="AccessToken"
+)
 
 oauth2_scheme_refresh = OAuth2PasswordBearer(
-    tokenUrl="refresh-token", scheme_name="RefreshToken"
+    tokenUrl="auth/refresh-tokens", scheme_name="RefreshToken"
 )
 
 

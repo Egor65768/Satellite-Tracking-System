@@ -34,6 +34,7 @@ from app.api.v1.helpers import (
     valid_coverage_zone_create,
     valid_coverage_zone_update,
 )
+from app.api.v1.auth import get_current_user
 
 
 @router.get(
@@ -189,6 +190,7 @@ async def create_coverage_zone(
         UploadFile, File(..., description="Coverage zone image in JPEG/PNG format")
     ],
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _auth=Depends(get_current_user),
 ) -> CoverageZoneInDB:
     coverage_zone_create = await valid_coverage_zone_create(
         coverage_zone_id, transmitter_type, satellite_code, image
@@ -220,8 +222,9 @@ async def create_coverage_zone(
 async def add_region_by_coverage_zone_id(
     region_data: RegionBase,
     coverage_zone_id: CoverageZoneId,
-    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _=Depends(valid_coverage_zone),
+    _auth=Depends(get_current_user),
 ):
     result = await coverage_zone_service.add_region_by_coverage_zone_id(
         coverage_zone_id, region_data
@@ -246,8 +249,9 @@ async def add_region_by_coverage_zone_id(
 async def add_regions_by_coverage_zone_id(
     regions_data: List[RegionBase],
     coverage_zone_id: CoverageZoneId,
-    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _=Depends(valid_coverage_zone),
+    _auth=Depends(get_current_user),
 ):
     result = await coverage_zone_service.add_regions_by_coverage_zone_id(
         coverage_zone_id, regions_data
@@ -276,8 +280,9 @@ async def add_regions_by_coverage_zone_id(
 async def delete_region_coverage_zone(
     coverage_zone_id: CoverageZoneId,
     region_name: RegionName,
-    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _=Depends(valid_coverage_zone),
+    _auth=Depends(get_current_user),
 ):
     region_data = RegionBase(name_region=region_name)
     result = await coverage_zone_service.delete_region_by_coverage_zone(
@@ -306,8 +311,9 @@ async def delete_region_coverage_zone(
 async def add_subregion_by_coverage_zone_id(
     subregion_data: Union[SubregionCreateByName, SubregionCreate],
     coverage_zone_id: CoverageZoneId,
-    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _=Depends(valid_coverage_zone),
+    _auth=Depends(get_current_user),
 ):
     if isinstance(subregion_data, SubregionCreate):
         result = await coverage_zone_service.add_subregion_by_coverage_zone_id(
@@ -337,8 +343,9 @@ async def add_subregion_by_coverage_zone_id(
 async def add_subregions_by_coverage_zone_id(
     subregions_data: List[SubregionCreate],
     coverage_zone_id: CoverageZoneId,
-    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _=Depends(valid_coverage_zone),
+    _auth=Depends(get_current_user),
 ):
     result = await coverage_zone_service.add_subregions_by_coverage_zone_id(
         coverage_zone_id, subregions_data
@@ -367,8 +374,9 @@ async def add_subregions_by_coverage_zone_id(
 async def delete_subregion_coverage_zone(
     subregion_name: SubregionName,
     coverage_zone_id: CoverageZoneId,
-    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _=Depends(valid_coverage_zone),
+    _auth=Depends(get_current_user),
 ):
     subregion_data = SubregionBase(name_subregion=subregion_name)
     result = await coverage_zone_service.delete_subregion_by_coverage_zone(
@@ -393,8 +401,9 @@ async def delete_subregion_coverage_zone(
 )
 async def delete_coverage_zone(
     coverage_zone_id: CoverageZoneId,
-    _: None = Depends(valid_coverage_zone),
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _=Depends(valid_coverage_zone),
+    _auth=Depends(get_current_user),
 ):
     result = await coverage_zone_service.delete_coverage_zone(coverage_zone_id)
     await raise_if_object_none(
@@ -430,6 +439,7 @@ async def update_coverage_zone(
         Optional[UploadFile], File(description="Coverage zone image in JPEG/PNG format")
     ] = None,
     coverage_zone_service: CoverageZoneService = Depends(get_coverage_zone_service),
+    _auth=Depends(get_current_user),
 ) -> CoverageZoneInDB:
     coverage_zone_update = await valid_coverage_zone_update(
         transmitter_type, satellite_code, image

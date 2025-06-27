@@ -12,6 +12,7 @@ from app.schemas import (
     SatelliteCharacteristicUpdate,
 )
 from app.api.v1.helpers import raise_if_object_none, get_satellite_service
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 
@@ -142,6 +143,7 @@ async def get_satellites(
 async def create_satellite(
     satellite_create: SatelliteCreate,
     satellite_service: SatelliteService = Depends(get_satellite_service),
+    _auth=Depends(get_current_user),
 ) -> SatelliteInDB:
     satellite = await satellite_service.create_satellite_base(satellite_create)
     await raise_if_object_none(satellite, status.HTTP_409_CONFLICT, detail_fail_create)
@@ -162,6 +164,7 @@ async def create_satellite_complete(
     satellite_create: SatelliteCreate,
     satellite_characteristic: SatelliteCharacteristicCreate,
     satellite_service: SatelliteService = Depends(get_satellite_service),
+    _auth=Depends(get_current_user),
 ) -> SatelliteCompleteInfo:
     satellite = await satellite_service.create_full_satellite(
         satellite_create, satellite_characteristic
@@ -186,6 +189,7 @@ async def create_satellite_complete(
 async def create_satellite_characteristic(
     satellite_characteristic: SatelliteCharacteristicCreate,
     satellite_service: SatelliteService = Depends(get_satellite_service),
+    _auth=Depends(get_current_user),
 ) -> SatelliteCharacteristicInDB:
     satellite_characteristic = await satellite_service.create_satellite_characteristic(
         satellite_characteristic
@@ -212,6 +216,7 @@ async def create_satellite_characteristic(
 async def delete_satellite_characteristic_by_international_code(
     international_code: InternationalCode,
     satellite_service: SatelliteService = Depends(get_satellite_service),
+    _auth=Depends(get_current_user),
 ):
 
     res = await satellite_service.delete_characteristic(international_code)
@@ -231,6 +236,7 @@ async def delete_satellite_characteristic_by_international_code(
 async def delete_satellite_by_international_code(
     international_code: InternationalCode,
     satellite_service: SatelliteService = Depends(get_satellite_service),
+    _auth=Depends(get_current_user),
 ):
     res = await satellite_service.delete_satellite(international_code)
     detail = "Satellite not found"
@@ -256,6 +262,7 @@ async def update_satellite(
     satellite_update: SatelliteUpdate,
     international_code: InternationalCode,
     satellite_service: SatelliteService = Depends(get_satellite_service),
+    _auth=Depends(get_current_user),
 ) -> SatelliteInDB:
     await raise_if_object_none(
         await satellite_service.get_satellite_by_id(international_code),
@@ -295,6 +302,7 @@ async def update_satellite_characteristics(
     satellite_characteristics_update: SatelliteCharacteristicUpdate,
     international_code: InternationalCode,
     satellite_service: SatelliteService = Depends(get_satellite_service),
+    _auth=Depends(get_current_user),
 ) -> SatelliteCharacteristicInDB:
     await raise_if_object_none(
         await satellite_service.get_satellite_characteristics(international_code),

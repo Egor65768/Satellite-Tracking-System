@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Path, Depends, status, Query
 from typing import Annotated, List
 from app.api.v1.helpers import raise_if_object_none, get_region_service
+from app.api.v1.auth import get_current_user
 from app.schemas import (
     RegionInDB,
     SubregionInDB,
@@ -161,6 +162,7 @@ async def get_subregions(
 async def create_region(
     region_create: RegionCreate,
     region_service: RegionService = Depends(get_region_service),
+    _auth=Depends(get_current_user),
 ) -> RegionInDB:
     region = await region_service.create_region(region_create)
     await raise_if_object_none(
@@ -182,6 +184,7 @@ async def create_region(
 async def create_subregion(
     subregion_create: SubregionCreate,
     region_service: RegionService = Depends(get_region_service),
+    _auth=Depends(get_current_user),
 ) -> SubregionInDB:
     subregion = await region_service.create_subregion(subregion_create)
     await raise_if_object_none(
@@ -206,6 +209,7 @@ async def create_subregion(
 async def region_delete_by_id(
     region_id: RegionID,
     region_service: RegionService = Depends(get_region_service),
+    _auth=Depends(get_current_user),
 ):
     await raise_if_object_none(
         await region_service.get_region_by_id(region_id),
@@ -232,6 +236,7 @@ async def region_delete_by_id(
 async def subregion_delete_by_id(
     subregion_id: SubregionID,
     region_service: RegionService = Depends(get_region_service),
+    _auth=Depends(get_current_user),
 ):
     subregion = await region_service.delete_subregion(subregion_id)
     await raise_if_object_none(
@@ -259,6 +264,7 @@ async def update_region(
     region_update: RegionUpdate,
     region_id: RegionID,
     region_service: RegionService = Depends(get_region_service),
+    _auth=Depends(get_current_user),
 ) -> RegionInDB:
     await raise_if_object_none(
         await region_service.get_region_by_id(region_id),
@@ -292,6 +298,7 @@ async def update_subregion(
     subregion_update: SubregionUpdate,
     subregion_id: SubregionID,
     region_service: RegionService = Depends(get_region_service),
+    _auth=Depends(get_current_user),
 ) -> SubregionInDB:
     await raise_if_object_none(
         await region_service.get_subregion_by_id(subregion_id),

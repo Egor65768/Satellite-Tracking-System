@@ -42,7 +42,9 @@ class TestSatelliteAPI:
         satellite_data = copy(satellite_test_date[0])
         satellite_data["launch_date"] = satellite_data["launch_date"].isoformat()
         # Создаем спутник
-        create_response = await self.client.post("/satellite/", json=satellite_data)
+        create_response = await self.client.post(
+            "/satellite/", json=satellite_data, headers=headers_auth
+        )
         assert create_response.status_code == status.HTTP_200_OK
         assert create_response.json()
 
@@ -89,12 +91,16 @@ class TestSatelliteAPI:
         satellite_data["launch_date"] = satellite_data["launch_date"].isoformat()
 
         # Первое создание - должно быть успешным
-        response1 = await self.client.post("/satellite/", json=satellite_data)
+        response1 = await self.client.post(
+            "/satellite/", json=satellite_data, headers=headers_auth
+        )
         assert response1.status_code == status.HTTP_200_OK
 
         # Второе создание с теми же данными - должно вернуть ошибку
 
-        response2 = await self.client.post("/satellite/", json=satellite_data)
+        response2 = await self.client.post(
+            "/satellite/", json=satellite_data, headers=headers_auth
+        )
         assert response2.status_code == status.HTTP_409_CONFLICT
 
     @pytest.mark.asyncio
@@ -113,7 +119,7 @@ class TestSatelliteAPI:
             "launch_date"
         ].isoformat()
         satellite_response = await self.client.post(
-            "/satellite/", json=satellite_data_dict
+            "/satellite/", json=satellite_data_dict, headers=headers_auth
         )
         assert satellite_response.status_code == status.HTTP_200_OK
 
@@ -133,7 +139,9 @@ class TestSatelliteAPI:
         )
         characteristics_data_dict = characteristics_data.model_dump()
         char_response = await self.client.post(
-            "/satellite/characteristic", json=characteristics_data_dict
+            "/satellite/characteristic",
+            json=characteristics_data_dict,
+            headers=headers_auth,
         )
         assert char_response.status_code == status.HTTP_200_OK
 
@@ -183,6 +191,7 @@ class TestSatelliteAPI:
                 "satellite_create": satellite_data_dict,
                 "satellite_characteristic": characteristics_data.model_dump(),
             },
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_200_OK
         complete_data = response.json()
@@ -232,7 +241,7 @@ class TestSatelliteAPI:
     @pytest.mark.asyncio
     async def test_update_satellite(self):
         # Тест обновления данных спутника
-        # Создаем спутник для обновления
+        # Создаём спутник для обновления
         satellite_data = SatelliteCreate(
             international_code="2025-011A",
             name_satellite="Before Update",
@@ -245,7 +254,7 @@ class TestSatelliteAPI:
             "launch_date"
         ].isoformat()
         create_response = await self.client.post(
-            "/satellite/", json=satellite_data_dict
+            "/satellite/", json=satellite_data_dict, headers=headers_auth
         )
         assert create_response.status_code == status.HTTP_200_OK
 
@@ -255,7 +264,9 @@ class TestSatelliteAPI:
         }
 
         update_response = await self.client.put(
-            f"/satellite/{satellite_data.international_code}", json=update_data_dict
+            f"/satellite/{satellite_data.international_code}",
+            json=update_data_dict,
+            headers=headers_auth,
         )
         assert update_response.status_code == status.HTTP_200_OK
         updated_satellite = update_response.json()
@@ -287,7 +298,9 @@ class TestSatelliteAPI:
         # Добавление характеристик для спутника
         satellite_test_characteristic = satellite_characteristic_test_date[1]
         response = await self.client.post(
-            f"/satellite/characteristic", json=satellite_test_characteristic
+            f"/satellite/characteristic",
+            json=satellite_test_characteristic,
+            headers=headers_auth,
         )
         assert response.status_code == status.HTTP_200_OK
 
@@ -317,6 +330,7 @@ class TestSatelliteAPI:
         update_response = await self.client.put(
             f"/satellite/characteristic/{satellite_data.get("international_code")}",
             json=update_data,
+            headers=headers_auth,
         )
         assert update_response.status_code == status.HTTP_200_OK
 
@@ -380,7 +394,8 @@ class TestSatelliteAPI:
 
         for satellite in satellite_list:
             create_response = await self.client.delete(
-                f"/satellite/{satellite.get("international_code")}"
+                f"/satellite/{satellite.get("international_code")}",
+                headers=headers_auth,
             )
             assert create_response.status_code == status.HTTP_204_NO_CONTENT
 
