@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api import country_api, satellite_api, region_api, coverage_zone_api
+from app.api import country_api, satellite_api, region_api, coverage_zone_api, user_api
 
 app = FastAPI()
 
@@ -10,3 +10,4 @@ app.include_router(region_api.router, prefix="/region", tags=["region"])
 app.include_router(
     coverage_zone_api.router, prefix="/coverage_zone", tags=["coverage_zone"]
 )
+app.include_router(user_api.router, prefix="/user", tags=["user"])

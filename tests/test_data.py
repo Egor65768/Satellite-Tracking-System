@@ -1,4 +1,5 @@
 from datetime import date
+from app.schemas import UserRole
 
 country_test_data = [
     {"abbreviation": "CA", "full_name": "Канада", "id": 1},
@@ -164,4 +165,30 @@ subregion_test_data = [
     {"name_subregion": "Moscow", "id_region": 2},
     {"name_subregion": "Stavropol", "id_region": 2},
     {"name_subregion": "Saint Petersburg", "id_region": 2},
+]
+
+user_data = {"name": "Egor", "email": "rhkh3ik334@gmail.com", "password": "Egor21212e"}
+admin_data = {
+    "name": "Dimas",
+    "email": "d2rhgrnjev34@gmail.com",
+    "password": "rfSgor21212e",
+    "role": UserRole.ADMIN,
+}
+email_admin_data = {"email": "d2rhgrnjev34@gmail.com"}
+user_data_admin = {
+    "name": "Slavic",
+    "email": "admin_adminovich@gmail.com",
+    "password": "Admin_1291_admin",
+    "role": UserRole.ADMIN,
+}
+invalid_email = {"email": "Invalid_email@gmail.com"}
+user_data_tests = [
+    {"name": "Misha", "email": "dfff34@gmail.com", "password": "Ldr21fe2e"},
+    {"name": "Sasha", "email": "dfv13@mail.ru", "password": "vcMSr2lf2e"},
+    {"name": "Alina", "email": "dakddjda344@gmail.com", "password": "fevhvbfHBVKD824"},
+    {
+        "name": "Nick",
+        "email": "nick12331nick@gmail.com",
+        "password": "rwhjGDUu8842gfguc",
+    },
 ]

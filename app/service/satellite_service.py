@@ -71,37 +71,55 @@ class SatelliteService:
     async def create_satellite_base(
         self, satellite_data: SatelliteCreate
     ) -> Optional[SatelliteInDB]:
-        return await self.repository.create_entity(satellite_data)
+        res = await self.repository.create_entity(satellite_data)
+        if res:
+            await self.repository.session.commit()
+        return res
 
     async def create_full_satellite(
         self,
         satellite_data: SatelliteCreate,
         characteristic: SatelliteCharacteristicCreate,
     ) -> Optional[SatelliteCompleteInfo]:
-        return await self.repository.create_satellite(satellite_data, characteristic)
+        res = await self.repository.create_satellite(satellite_data, characteristic)
+        if res:
+            await self.repository.session.commit()
+        return res
 
     async def create_satellite_characteristic(
         self, satellite_characteristic: SatelliteCharacteristicCreate
     ) -> Optional[SatelliteCharacteristicInDB]:
-        return await self.characteristic_repository.create_entity(
+        res = await self.characteristic_repository.create_entity(
             satellite_characteristic
         )
+        if res:
+            await self.characteristic_repository.session.commit()
+        return res
 
     async def delete_characteristic(self, satellite_id: str) -> bool:
         international_code = await self._get_validated_code(satellite_id)
-        return await self.characteristic_repository.delete_model(international_code)
+        res = await self.characteristic_repository.delete_model(international_code)
+        if res:
+            await self.characteristic_repository.session.commit()
+        return res
 
     async def delete_satellite(self, satellite_id: str) -> bool:
         international_code = await self._get_validated_code(satellite_id)
-        return await self.repository.delete_model(international_code)
+        res = await self.repository.delete_model(international_code)
+        if res:
+            await self.repository.session.commit()
+        return res
 
     async def update_satellite(
         self, satellite_id: str, satellite_update_data: SatelliteUpdate
     ) -> Optional[SatelliteInDB]:
         international_code = await self._get_validated_code(satellite_id)
-        return await self.repository.update_satellite(
+        res = await self.repository.update_satellite(
             international_code, satellite_update_data
         )
+        if res:
+            await self.repository.session.commit()
+        return res
 
     async def update_satellite_characteristic(
         self,
@@ -109,6 +127,9 @@ class SatelliteService:
         satellite_characteristic_update_data: SatelliteCharacteristicUpdate,
     ) -> Optional[SatelliteCharacteristicInDB]:
         international_code = await self._get_validated_code(satellite_id)
-        return await self.characteristic_repository.update_characteristic_satellite(
+        res = await self.characteristic_repository.update_characteristic_satellite(
             international_code, satellite_characteristic_update_data
         )
+        if res:
+            await self.characteristic_repository.session.commit()
+        return res

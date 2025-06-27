@@ -6,6 +6,8 @@ from .models import (
     Satellite,
     SatelliteCharacteristic,
     Subregion,
+    User,
+    RefreshToken,
 )
 from .repositories import (
     CountryRepository,
@@ -14,6 +16,8 @@ from .repositories import (
     CoverageZoneRepository,
     SatelliteRepository,
     SatelliteCharacteristicRepository,
+    UserRepository,
+    TokenRepository,
 )
 
 __all__ = [
@@ -30,4 +34,8 @@ __all__ = [
     "CoverageZoneRepository",
     "SatelliteRepository",
     "SatelliteCharacteristicRepository",
+    "UserRepository",
+    "User",
+    "RefreshToken",
+    "TokenRepository",
 ]

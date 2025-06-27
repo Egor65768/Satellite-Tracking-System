@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ENDPOINT_URL: str
     BUCKET_NAME: str
+    ADMIN_SECRET_KEY: str
+    ACCESS_TOKEN_SECRET_KEY: str
+    REFRESH_TOKEN_SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_SECONDS: int
+    REFRESH_TOKEN_EXPIRE_SECONDS: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")

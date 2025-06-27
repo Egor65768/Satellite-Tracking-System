@@ -92,6 +92,16 @@ DB_TEST_NAME=  # Тестовая БД (для pytest)
 DB_USER=       # Логин администратора БД
 DB_PASSWORD=   # Пароль администратора
 
+# Настройки аутентификации
+
+ADMIN_SECRET_KEY=               # Секретный ключ для создания суперпользователя 
+ACCESS_TOKEN_SECRET_KEY=        # Секретный ключ для access-токенов (короткоживущих)
+REFRESH_TOKEN_SECRET_KEY=       # Секретный ключ  для refresh-токенов (долгоживущих)
+ALGORITHM=                      # Алгоритм шифрования токенов
+ACCESS_TOKEN_EXPIRE_SECONDS=    # Время жизни access-токена (в секундах)
+REFRESH_TOKEN_EXPIRE_SECONDS=   # Время жизни refresh-токена (в секундах)
+REFRESH_TOKEN_EXPIRE_DAYS =     # Время жизни refresh-токена (в днях, суммируетчся с REFRESH_TOKEN_EXPIRE_SECONDS)
+
 # Доступ к S3-хранилищу (Selectel)
 
 ACCESS_KEY=    # Публичный ключ доступа

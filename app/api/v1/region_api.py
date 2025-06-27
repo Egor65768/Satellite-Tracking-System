@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Path, Depends, status, Query
 from typing import Annotated, List
-from app.core import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.service import create_region_service
-from app.api.v1.helpers import raise_if_object_none
+from app.api.v1.helpers import raise_if_object_none, get_region_service
 from app.schemas import (
     RegionInDB,
     SubregionInDB,
@@ -35,10 +32,6 @@ RegionName = Annotated[
         json_schema_extra={"examples": ["Asia", "Moscow region"]},
     ),
 ]
-
-
-async def get_region_service(db: AsyncSession = Depends(get_db)):
-    return create_region_service(db)
 
 
 @router.get(

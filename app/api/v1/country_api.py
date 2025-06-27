@@ -11,6 +11,7 @@ from app.schemas import (
     SatelliteInDB,
 )
 from app.api.v1.helpers import raise_if_object_none
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 

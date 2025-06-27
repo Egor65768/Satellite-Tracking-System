@@ -47,6 +47,7 @@ class TestCreate:
                 SatelliteCreate(**satellite_data)
             )
             assert satellite is not None
+        async with db_session.begin():
             satellite = await service.get_satellite_by_id(
                 satellite_data.get("international_code")
             )
@@ -106,6 +107,7 @@ class TestCreateFull:
             assert await service.create_satellite_characteristic(
                 SatelliteCharacteristicCreate(**satellite_characteristic_data)
             )
+        async with db_session.begin():
             sat_data = await service.get_satellite_characteristics(
                 satellite_characteristic_data.get("international_code")
             )
@@ -143,26 +145,29 @@ class TestCreateFull:
         international_code = satellite_characteristic_data.get("international_code")
         async with db_session.begin():
             assert await service.delete_characteristic(international_code)
+        async with db_session.begin():
             assert await service.get_satellite_complete_info(international_code) is None
             assert (
                 await service.get_satellite_characteristics(international_code) is None
             )
             assert await service.get_satellite_by_id(international_code) is not None
             assert await service.delete_satellite(international_code)
+        async with db_session.begin():
             assert await service.get_satellite_by_id(international_code) is None
 
     @pytest.mark.asyncio
     async def test_create_satellite_complete(self, db_session):
         service = create_satellite_service(db_session)
-        async with db_session.begin():
-            for satellite_date, satellite_characteristic in zip(
-                satellite_test_date, satellite_characteristic_test_date
-            ):
-                international_code = satellite_date.get("international_code")
+        for satellite_date, satellite_characteristic in zip(
+            satellite_test_date, satellite_characteristic_test_date
+        ):
+            international_code = satellite_date.get("international_code")
+            async with db_session.begin():
                 assert await service.create_full_satellite(
                     SatelliteCreate(**satellite_date),
                     SatelliteCharacteristicCreate(**satellite_characteristic),
                 )
+            async with db_session.begin():
                 assert await service.get_satellite_by_id(international_code) is not None
                 assert (
                     await service.get_satellite_characteristics(international_code)
@@ -211,6 +216,7 @@ class TestUpdate:
             assert await service.update_satellite(
                 international_code_1, SatelliteUpdate(**update_data)
             )
+        async with db_session.begin():
             sat_1 = await service.get_satellite_by_id(international_code_1)
             assert sat_1
             assert sat_1.name_satellite == update_data.get("name_satellite")
@@ -248,7 +254,7 @@ class TestUpdate:
             assert await service.update_satellite_characteristic(
                 international_code, SatelliteCharacteristicUpdate(**update_data)
             )
-
+        async with db_session.begin():
             sat_char_db = await service.get_satellite_characteristics(
                 international_code
             )
@@ -275,7 +281,8 @@ class TestDelete:
         service = create_satellite_service(db_session)
         async with db_session.begin():
             sat_list = await service.get_satellites(PaginationBase(limit=100))
-            for sat in sat_list:
+        for sat in sat_list:
+            async with db_session.begin():
                 assert await service.delete_satellite(sat.international_code)
 
     @pytest.mark.asyncio

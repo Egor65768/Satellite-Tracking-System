@@ -1,8 +1,7 @@
 from fastapi import HTTPException, Path, status, Depends, UploadFile
 from typing import Annotated, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core import get_db
-from app.service import create_coverage_zone_service, CoverageZoneService
+from app.api.v1.helpers import get_coverage_zone_service
+from app.service import CoverageZoneService
 from app.schemas import CoverageZoneCreate, CoverageZoneUpdate
 from pydantic import ValidationError
 
@@ -35,10 +34,6 @@ SubregionName = Annotated[
         max_length=60,
     ),
 ]
-
-
-async def get_coverage_zone_service(db: AsyncSession = Depends(get_db)):
-    return create_coverage_zone_service(db)
 
 
 async def valid_coverage_zone(

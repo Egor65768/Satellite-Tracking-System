@@ -2,7 +2,7 @@ from fastapi import APIRouter, Path, Depends, status, Query
 from typing import Annotated, List
 from app.core import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.service import create_satellite_service
+from app.service import SatelliteService
 from app.schemas import (
     SatelliteInDB,
     SatelliteCharacteristicInDB,
@@ -13,7 +13,7 @@ from app.schemas import (
     SatelliteUpdate,
     SatelliteCharacteristicUpdate,
 )
-from app.api.v1.helpers import raise_if_object_none
+from app.api.v1.helpers import raise_if_object_none, get_satellite_service
 
 router = APIRouter()
 
@@ -47,9 +47,8 @@ detail_fail_create = (
 )
 async def get_satellite_by_international_code(
     international_code: InternationalCode,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteInDB:
-    satellite_service = create_satellite_service(db)
     satellite = await satellite_service.get_satellite_by_id(international_code)
     await raise_if_object_none(
         satellite, status.HTTP_404_NOT_FOUND, "Satellite not found"
@@ -72,9 +71,8 @@ async def get_satellite_by_international_code(
 )
 async def get_satellite_characteristic_by_international_code(
     international_code: InternationalCode,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteCharacteristicInDB:
-    satellite_service = create_satellite_service(db)
     satellite_characteristic = await satellite_service.get_satellite_characteristics(
         international_code
     )
@@ -102,9 +100,8 @@ async def get_satellite_characteristic_by_international_code(
 )
 async def get_satellite_complete_information_by_international_code(
     international_code: InternationalCode,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteCompleteInfo:
-    satellite_service = create_satellite_service(db)
     satellite_complete_info = await satellite_service.get_satellite_complete_info(
         international_code
     )
@@ -125,11 +122,10 @@ async def get_satellite_complete_information_by_international_code(
     },
 )
 async def get_satellites(
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
     limit: Annotated[int, Query(ge=1)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> List[SatelliteInDB]:
-    satellite_service = create_satellite_service(db)
     return await satellite_service.get_satellites(
         PaginationBase(limit=limit, offset=offset)
     )
@@ -147,12 +143,10 @@ async def get_satellites(
 )
 async def create_satellite(
     satellite_create: SatelliteCreate,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteInDB:
-    satellite_service = create_satellite_service(db)
     satellite = await satellite_service.create_satellite_base(satellite_create)
     await raise_if_object_none(satellite, status.HTTP_409_CONFLICT, detail_fail_create)
-    await db.commit()
     return satellite
 
 
@@ -169,14 +163,12 @@ async def create_satellite(
 async def create_satellite_complete(
     satellite_create: SatelliteCreate,
     satellite_characteristic: SatelliteCharacteristicCreate,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteCompleteInfo:
-    satellite_service = create_satellite_service(db)
     satellite = await satellite_service.create_full_satellite(
         satellite_create, satellite_characteristic
     )
     await raise_if_object_none(satellite, status.HTTP_409_CONFLICT, detail_fail_create)
-    await db.commit()
     return satellite
 
 
@@ -195,9 +187,8 @@ async def create_satellite_complete(
 )
 async def create_satellite_characteristic(
     satellite_characteristic: SatelliteCharacteristicCreate,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteCharacteristicInDB:
-    satellite_service = create_satellite_service(db)
     satellite_characteristic = await satellite_service.create_satellite_characteristic(
         satellite_characteristic
     )
@@ -205,7 +196,6 @@ async def create_satellite_characteristic(
     await raise_if_object_none(
         satellite_characteristic, status.HTTP_409_CONFLICT, detail
     )
-    await db.commit()
     return satellite_characteristic
 
 
@@ -222,13 +212,13 @@ async def create_satellite_characteristic(
     },
 )
 async def delete_satellite_characteristic_by_international_code(
-    international_code: InternationalCode, db: AsyncSession = Depends(get_db)
+    international_code: InternationalCode,
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ):
-    satellite_service = create_satellite_service(db)
+
     res = await satellite_service.delete_characteristic(international_code)
     detail = "Satellite characteristic not found"
     await raise_if_object_none(res, status.HTTP_404_NOT_FOUND, detail)
-    await db.commit()
 
 
 @router.delete(
@@ -241,13 +231,12 @@ async def delete_satellite_characteristic_by_international_code(
     },
 )
 async def delete_satellite_by_international_code(
-    international_code: InternationalCode, db: AsyncSession = Depends(get_db)
+    international_code: InternationalCode,
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ):
-    satellite_service = create_satellite_service(db)
     res = await satellite_service.delete_satellite(international_code)
     detail = "Satellite not found"
     await raise_if_object_none(res, status.HTTP_404_NOT_FOUND, detail)
-    await db.commit()
 
 
 @router.put(
@@ -268,9 +257,8 @@ async def delete_satellite_by_international_code(
 async def update_satellite(
     satellite_update: SatelliteUpdate,
     international_code: InternationalCode,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteInDB:
-    satellite_service = create_satellite_service(db)
     await raise_if_object_none(
         await satellite_service.get_satellite_by_id(international_code),
         status.HTTP_404_NOT_FOUND,
@@ -284,7 +272,6 @@ async def update_satellite(
         status.HTTP_409_CONFLICT,
         "A satellite with such data cannot be updated",
     )
-    await db.commit()
     return updated_satellite
 
 
@@ -309,9 +296,8 @@ async def update_satellite(
 async def update_satellite_characteristics(
     satellite_characteristics_update: SatelliteCharacteristicUpdate,
     international_code: InternationalCode,
-    db: AsyncSession = Depends(get_db),
+    satellite_service: SatelliteService = Depends(get_satellite_service),
 ) -> SatelliteCharacteristicInDB:
-    satellite_service = create_satellite_service(db)
     await raise_if_object_none(
         await satellite_service.get_satellite_characteristics(international_code),
         status.HTTP_404_NOT_FOUND,
@@ -327,5 +313,4 @@ async def update_satellite_characteristics(
         status.HTTP_409_CONFLICT,
         "A satellite with such data cannot be updated",
     )
-    await db.commit()
     return updated_satellite_characteristics
