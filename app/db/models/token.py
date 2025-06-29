@@ -14,6 +14,7 @@ class RefreshToken(Base):
         ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
     token_hash: Mapped[str] = mapped_column(String, nullable=False)
+    jti: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
     device_info: Mapped[Optional[str]] = mapped_column(String)
     ip_address: Mapped[Optional[str]] = mapped_column(String)
     expires_at: Mapped[datetime] = mapped_column(

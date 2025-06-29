@@ -192,16 +192,16 @@ BUCKET_NAME=   # Название бакета
 
 Хранит токены обновления для сессий аутентификации.
 
-| Поле        | Тип                      | Ограничения                                       | Описание                             |
-|-------------|--------------------------|---------------------------------------------------|--------------------------------------|
-| id          | INTEGER                  | PRIMARY KEY, AUTO_INCREMENT                       | Уникальный идентификатор токена      |
-| user_id     | INTEGER                  | FOREIGN KEY (user.id) ON DELETE CASCADE, NOT NULL | Ссылка на пользователя               |
-| token_hash  | STRING                   | NOT NULL                                          | Хеш токена                           |
-| device_info | STRING                   | NULLABLE                                          | Информация об устройстве             |
-| ip_address  | STRING                   | NULLABLE                                          | IP-адрес, с которого был выдан токен |
-| expires_at  | TIMESTAMP WITH TIME ZONE | NOT NULL                                          | Срок действия токена                 |
-| created_at  | TIMESTAMP WITH TIME ZONE | DEFAULT CURRENT_TIMESTAMP                         | Дата создания токена                 |
-
+| Поле        | Тип                      | Ограничения                                       | Описание                                                                                                                                             |
+|-------------|--------------------------|---------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| id          | INTEGER                  | PRIMARY KEY, AUTO_INCREMENT                       | Уникальный идентификатор токена                                                                                                                      |
+| user_id     | INTEGER                  | FOREIGN KEY (user.id) ON DELETE CASCADE, NOT NULL | Ссылка на пользователя                                                                                                                               |
+| token_hash  | STRING                   | NOT NULL                                          | Хеш токена                                                                                                                                           |
+| device_info | STRING                   | NULLABLE                                          | Информация об устройстве                                                                                                                             |
+| ip_address  | STRING                   | NULLABLE                                          | IP-адрес, с которого был выдан токен                                                                                                                 |
+| expires_at  | TIMESTAMP WITH TIME ZONE | NOT NULL                                          | Срок действия токена                                                                                                                                 |
+| created_at  | TIMESTAMP WITH TIME ZONE | DEFAULT CURRENT_TIMESTAMP                         | Дата создания токена                                                                                                                                 |
+| jti         | STRING                   | NOT NULL,UNIQUE                                   | Критически важное поле: 1. Связывает JWT с записью в БД через payload.jti 2. Используется в двойной проверке: `verify_password()` + `jti` совпадение |
 ## Визуальная схема БД
 
 ![linux](./img/Untitled.png)

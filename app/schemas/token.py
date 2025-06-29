@@ -32,6 +32,7 @@ class CreateRefreshToken(TokenData):
         ...,
         description="Хэш рефреш токена.",
     )
+    jti: str = Field(..., description="Уникальный ID токена")
 
 
 class RefreshToken(BaseModel):

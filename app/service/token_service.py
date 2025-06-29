@@ -20,6 +20,7 @@ from app.core import (
     RefreshTokenExpiredError,
     AccessTokenExpiredError,
 )
+from uuid import uuid4
 
 if TYPE_CHECKING:
     from app.db import TokenRepository, UserRepository
@@ -32,11 +33,9 @@ class TokenService:
 
     @staticmethod
     async def _create_token(
-        user_id: Object_ID,
-        expire: datetime,
-        secret_key: str,
+        user_id: Object_ID, expire: datetime, secret_key: str, jti: str
     ) -> str:
-        payload = {"sub": str(user_id.id), "exp": int(expire.timestamp())}
+        payload = {"sub": str(user_id.id), "exp": int(expire.timestamp()), "jti": jti}
         encoded_jwt = jwt.encode(payload, secret_key, algorithm=settings.ALGORITHM)
         return encoded_jwt
 
@@ -47,12 +46,14 @@ class TokenService:
                 expire=datetime.now(timezone.utc)
                 + timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_SECONDS),
                 secret_key=settings.ACCESS_TOKEN_SECRET_KEY,
+                jti=str(uuid4()),
             )
         )
 
     async def create_refresh_token(
         self, data_dict: Dict, user_id: Object_ID
     ) -> Optional[RefreshToken]:
+        jti = str(uuid4())
         expire = datetime.now(timezone.utc) + timedelta(
             days=settings.REFRESH_TOKEN_EXPIRE_DAYS,
             seconds=settings.REFRESH_TOKEN_EXPIRE_SECONDS,
@@ -61,6 +62,7 @@ class TokenService:
             user_id=user_id,
             expire=expire,
             secret_key=settings.REFRESH_TOKEN_SECRET_KEY,
+            jti=jti,
         )
         if not await self.repository.create_entity(
             CreateRefreshToken(
@@ -69,10 +71,11 @@ class TokenService:
                 ip_address=data_dict.get("ip_address"),
                 token_hash=get_hash(refresh_token),
                 expires_at=expire,
+                jti=jti,
             )
         ):
             return None
-        await self.repository.session.commit()
+        await self.repository.session.flush()
         return RefreshToken(refresh_token=refresh_token)
 
     async def create_tokens(self, data_dict: Dict, user_id: Object_ID) -> Token:
@@ -127,7 +130,13 @@ class TokenService:
     ) -> Optional[RefreshTokenInDB]:
         for refresh_token in refresh_tokens:
             if verify_password(token, refresh_token.token_hash):
-                return refresh_token
+                payload = jwt.decode(
+                    token,
+                    settings.REFRESH_TOKEN_SECRET_KEY,
+                    algorithms=[settings.ALGORITHM],
+                )
+                if payload.get("jti") == refresh_token.jti:
+                    return refresh_token
         return None
 
     async def get_refresh_tokens_by_user_id(
@@ -155,6 +164,8 @@ class TokenService:
         res = await self.repository.delete_refresh_token(
             Object_ID(id=refresh_token_db.id)
         )
+        if res:
+            await self.repository.session.flush()
         return res
 
     async def delete_refresh_token_by_id(self, token_id: Object_ID) -> bool:

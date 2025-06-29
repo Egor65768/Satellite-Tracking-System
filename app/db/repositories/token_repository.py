@@ -23,10 +23,11 @@ class TokenRepository(BaseRepository[RefreshToken]):
         for token in tokens:
             if token.expires_at < datetime.now(timezone.utc):
                 await self.delete_refresh_token(Object_ID(id=token.id))
+                flag_delete = True
                 continue
             tokens_list.append(RefreshTokenInDB(**token.__dict__))
         if flag_delete:
-            await self.session.commit()
+            await self.session.flush()
         return tokens_list
 
     async def delete_refresh_token(self, refresh_token_id: Object_ID) -> bool:
