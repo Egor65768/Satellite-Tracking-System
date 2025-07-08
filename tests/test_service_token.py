@@ -12,11 +12,11 @@ from app.core import (
     RefreshTokenNotFoundError,
     AccessTokenExpiredError,
     RefreshTokenExpiredError,
-    InvalidAccessToken,
     InvalidRefreshToken,
+    UserNotFoundError,
     settings,
 )
-from tests.test_data import user_data
+from tests.test_data import user_data, invalid_refresh_token
 
 
 class TestTokenService:
@@ -45,16 +45,19 @@ class TestTokenService:
             user_service = create_user_service(db_session)
             user_in_db = await user_service.get_user_by_email(user_data.get("email"))
             tokens = await service.create_tokens(
-                data_dict={}, user_id=Object_ID(id=user_in_db.id)
+                data_dict={},
+                user_id=Object_ID(id=user_in_db.id),
+                role=UserRole(user_in_db.role),
             )
             assert tokens is not None
             assert tokens.token_type == "Bearer"
             assert tokens.refresh_token is not None
             assert tokens.access_token is not None
 
-            user_id = await service.decode_and_verify_refresh_token(
+            user_id, role = await service.decode_and_verify_refresh_token(
                 tokens.refresh_token
             )
+            assert role == UserRole(user_in_db.role)
             assert user_id
             assert user_id.id == user_in_db.id
 
@@ -88,34 +91,39 @@ class TestTokenService:
             assert settings.REFRESH_TOKEN_EXPIRE_DAYS == 0
             user_in_db = await user_service.get_user_by_email(user_data.get("email"))
             tokens = await service.create_tokens(
-                data_dict={}, user_id=Object_ID(id=user_in_db.id)
+                data_dict={},
+                user_id=Object_ID(id=user_in_db.id),
+                role=UserRole(user_in_db.role),
             )
             assert tokens is not None
             assert tokens.token_type == "Bearer"
             assert tokens.refresh_token is not None
             assert tokens.access_token is not None
 
-            user_id = await service.decode_and_verify_refresh_token(
+            user_id, role = await service.decode_and_verify_refresh_token(
                 tokens.refresh_token
             )
+            assert role == UserRole(user_in_db.role)
             assert user_id
             assert user_id.id == user_in_db.id
 
             user_id_a = await service.decode_access_token(tokens.access_token)
             assert user_id == user_id_a
 
-            user_id_b = await service.decode_and_verify_refresh_token(
+            user_id_b, role = await service.decode_and_verify_refresh_token(
                 tokens.refresh_token
             )
+            assert role == UserRole(user_in_db.role)
             assert user_id_b.id == user_id.id
 
             await sleep(2)
             with pytest.raises(AccessTokenExpiredError):
                 await service.decode_access_token(tokens.access_token)
 
-            user_id_b = await service.decode_and_verify_refresh_token(
+            user_id_b, role = await service.decode_and_verify_refresh_token(
                 tokens.refresh_token
             )
+            assert role == UserRole(user_in_db.role)
             assert user_id_b.id == user_id.id
 
             await sleep(2.1)
@@ -133,6 +141,19 @@ class TestTokenService:
                 Object_ID(id=user_in_db.id)
             )
             assert len(tokens) != 0
+
+    @pytest.mark.asyncio
+    async def test_create_invalid(self, db_session):
+        service = create_token_service(db_session)
+        with pytest.raises(UserNotFoundError):
+            await service.create_tokens(dict(), Object_ID(id=7136))
+
+    @pytest.mark.asyncio
+    async def test_delete_invalid(self, db_session):
+        async with db_session.begin():
+            service = create_token_service(db_session)
+            assert not await service.delete_refresh_token("fhhehcd.eihwohg")
+            assert not await service.delete_refresh_token(invalid_refresh_token)
 
     @pytest.mark.asyncio
     async def test_delete(self, db_session):
@@ -171,6 +192,9 @@ class TestTokenService:
                 assert await service.decode_and_verify_refresh_token(
                     refresh_token_list[0]
                 )
+
+            assert not await service.delete_refresh_token(refresh_token_list[0])
+
             assert await user_service.delete_user(user_data.get("email"))
         async with db_session.begin():
             assert await user_service.get_user_by_email(user_data.get("email")) is None

@@ -75,7 +75,9 @@ class UserService:
             await self.repository.session.commit()
         return user
 
-    async def authenticate_user(self, auth_request: AuthRequest) -> Object_ID:
+    async def authenticate_user(
+        self, auth_request: AuthRequest
+    ) -> tuple[Object_ID, UserRole]:
         password_hash_db = await self.repository.get_hash_password_by_email(
             UserEmail(email=auth_request.email)
         )
@@ -84,7 +86,7 @@ class UserService:
         if not verify_password(auth_request.password, password_hash_db):
             raise InvalidPasswordError()
         user = await self.get_user_by_email(auth_request.email)
-        return Object_ID(id=user.id)
+        return Object_ID(id=user.id), UserRole(user.role)
 
     async def delete_user(self, email_user: EmailStr) -> bool:
         try:

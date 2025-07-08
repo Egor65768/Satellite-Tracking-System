@@ -9,6 +9,7 @@ from app.schemas import (
     Token,
     CreateRefreshToken,
     RefreshTokenInDB,
+    UserRole,
 )
 from app.service import get_hash, verify_password
 from app.core import (
@@ -33,13 +34,20 @@ class TokenService:
 
     @staticmethod
     async def _create_token(
-        user_id: Object_ID, expire: datetime, secret_key: str, jti: str
+        user_id: Object_ID, expire: datetime, secret_key: str, jti: str, role: str
     ) -> str:
-        payload = {"sub": str(user_id.id), "exp": int(expire.timestamp()), "jti": jti}
+        payload = {
+            "sub": str(user_id.id),
+            "exp": int(expire.timestamp()),
+            "jti": jti,
+            "role": role,
+        }
         encoded_jwt = jwt.encode(payload, secret_key, algorithm=settings.ALGORITHM)
         return encoded_jwt
 
-    async def create_access_token(self, user_id: Object_ID) -> AccessToken:
+    async def create_access_token(
+        self, user_id: Object_ID, role: str = "user"
+    ) -> AccessToken:
         return AccessToken(
             access_token=await self._create_token(
                 user_id=user_id,
@@ -47,11 +55,12 @@ class TokenService:
                 + timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_SECONDS),
                 secret_key=settings.ACCESS_TOKEN_SECRET_KEY,
                 jti=str(uuid4()),
+                role=role,
             )
         )
 
     async def create_refresh_token(
-        self, data_dict: Dict, user_id: Object_ID
+        self, data_dict: Dict, user_id: Object_ID, role: str = "user"
     ) -> Optional[RefreshToken]:
         jti = str(uuid4())
         expire = datetime.now(timezone.utc) + timedelta(
@@ -63,6 +72,7 @@ class TokenService:
             expire=expire,
             secret_key=settings.REFRESH_TOKEN_SECRET_KEY,
             jti=jti,
+            role=role,
         )
         if not await self.repository.create_entity(
             CreateRefreshToken(
@@ -78,13 +88,17 @@ class TokenService:
         await self.repository.session.flush()
         return RefreshToken(refresh_token=refresh_token)
 
-    async def create_tokens(self, data_dict: Dict, user_id: Object_ID) -> Token:
+    async def create_tokens(
+        self, data_dict: Dict, user_id: Object_ID, role: UserRole = UserRole.USER
+    ) -> Token:
         if await self.user_repository.get_as_model(user_id) is None:
             raise UserNotFoundError()
         return Token(
-            access_token=(await self.create_access_token(user_id)).access_token,
+            access_token=(
+                await self.create_access_token(user_id, role.value)
+            ).access_token,
             refresh_token=(
-                await self.create_refresh_token(data_dict, user_id)
+                await self.create_refresh_token(data_dict, user_id, role.value)
             ).refresh_token,
             token_type="Bearer",
         )
@@ -106,18 +120,16 @@ class TokenService:
             )
         except jwt.ExpiredSignatureError:
             raise AccessTokenExpiredError()
-        except jwt.PyJWTError as e:
-            print(e)
+        except jwt.PyJWTError:
             raise InvalidAccessToken()
 
-    async def _decode_refresh_token(self, token: str) -> Object_ID:
+    async def _decode_refresh_token(self, token: str) -> tuple[Object_ID, UserRole]:
         try:
-            return Object_ID(
-                id=(
-                    await self._decode_token(
-                        token=token, secret_key=settings.REFRESH_TOKEN_SECRET_KEY
-                    )
-                ).get("sub")
+            decode_data = await self._decode_token(
+                token=token, secret_key=settings.REFRESH_TOKEN_SECRET_KEY
+            )
+            return Object_ID(id=decode_data.get("sub")), UserRole(
+                decode_data.get("role")
             )
         except jwt.ExpiredSignatureError:
             raise RefreshTokenExpiredError()
@@ -144,16 +156,18 @@ class TokenService:
     ) -> List[RefreshTokenInDB]:
         return await self.repository.get_refresh_tokens_by_user_id(user_id)
 
-    async def decode_and_verify_refresh_token(self, token: str) -> Object_ID:
-        object_id = await self._decode_refresh_token(token)
+    async def decode_and_verify_refresh_token(
+        self, token: str
+    ) -> tuple[Object_ID, UserRole]:
+        object_id, role = await self._decode_refresh_token(token)
         refresh_tokens = await self.get_refresh_tokens_by_user_id(object_id)
         if await self._get_token(refresh_tokens, token) is None:
             raise RefreshTokenNotFoundError()
-        return object_id
+        return object_id, role
 
     async def delete_refresh_token(self, token: str) -> bool:
         try:
-            object_id = await self._decode_refresh_token(token)
+            object_id, role = await self._decode_refresh_token(token)
         except InvalidRefreshToken:
             return False
         refresh_token_db = await self._get_token(

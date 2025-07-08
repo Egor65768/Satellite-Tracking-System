@@ -31,6 +31,7 @@ class UserCreate(UserBase):
     )
     role: UserRole = Field(UserRole.USER)
 
+    @classmethod
     @field_validator("password")
     def validate_password(cls, v):
         return validate_password(v)
@@ -65,6 +66,7 @@ class UserPassword(BaseModel):
         ..., min_length=8, max_length=64, json_schema_extra={"example": "Password_123"}
     )
 
+    @classmethod
     @field_validator("password")
     def validate_password(cls, v):
         return validate_password(v)

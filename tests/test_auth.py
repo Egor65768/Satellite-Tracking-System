@@ -1,11 +1,12 @@
 import pytest
 from fastapi import status
-from tests.test_data import user_data_tests, country_test_data
+from tests.test_data import user_data_tests, country_test_data, invalid_refresh_token
 from app.core import settings
 from asyncio import sleep
 
 jwt_tokens = dict()
 headers_auth = dict()
+headers_refresh = dict()
 
 
 @pytest.mark.usefixtures("async_client")
@@ -58,13 +59,6 @@ class TestUserAPI:
         assert create_response.status_code == status.HTTP_401_UNAUTHORIZED
 
         headers_auth_invalid = dict()
-        invalid_refresh_token = (
-            "eyJhbGciOiJIUzI1NiIsInR"
-            "5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODk"
-            "wIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWU"
-            "sImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nM"
-            "iGM6H9FNFUROf3wh7SmqJp-QV30"
-        )
         headers_auth_invalid["Authorization"] = f"Bearer {invalid_refresh_token}"
 
         create_response = await self.client.post(
@@ -79,7 +73,6 @@ class TestUserAPI:
         assert create_response.status_code == status.HTTP_401_UNAUTHORIZED
         assert create_response.json() == {"detail": "Access token expired"}
 
-        headers_refresh = dict()
         old_refresh_token = jwt_tokens["refresh_token"]
         headers_refresh["Authorization"] = f"Bearer {jwt_tokens['refresh_token']}"
         response = await self.client.post(
@@ -111,6 +104,54 @@ class TestUserAPI:
         headers_auth["Authorization"] = f"Bearer {jwt_tokens['access_token']}"
 
     @pytest.mark.asyncio
+    async def test_auth_2(self):
+        response = await self.client.post(
+            "/auth/refresh-token",
+            headers=headers_auth,
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json() == {"detail": "Invalid refresh token"}
+
+    @pytest.mark.asyncio
+    async def test_auth_3(self):
+        user_data = user_data_tests[0]
+        login_data = {
+            "username": "invalid_email@inbox.com",
+            "password": "jkdjksjf123HDd",
+        }
+        response = await self.client.post(
+            "/auth/tokens",
+            data=login_data,
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json() == {
+            "detail": "Email not found",
+        }
+
+        login_data = {
+            "username": user_data.get("email"),
+            "password": "jkdjksjf123HDd",
+        }
+        response = await self.client.post(
+            "/auth/tokens",
+            data=login_data,
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json() == {
+            "detail": "Invalid password",
+        }
+
+        login_data = {
+            "username": user_data.get("email"),
+            "password": user_data.get("password"),
+        }
+        response = await self.client.post(
+            "/auth/tokens",
+            data=login_data,
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+    @pytest.mark.asyncio
     async def test_delete_user(self):
         country_data = country_test_data[0]
         user_data = user_data_tests[0]
@@ -126,3 +167,10 @@ class TestUserAPI:
         assert create_response.json() == {
             "detail": "The access token contains a non-existent user ID"
         }
+
+        response = await self.client.post(
+            "/auth/refresh-token",
+            headers=headers_refresh,
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json() == {"detail": "Refresh token not found in db"}

@@ -195,3 +195,11 @@ user_data_tests = [
 
 token_data = dict()
 headers_auth = dict()
+
+invalid_refresh_token = (
+    "eyJhbGciOiJIUzI1NiIsInR"
+    "5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODk"
+    "wIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWU"
+    "sImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nM"
+    "iGM6H9FNFUROf3wh7SmqJp-QV30"
+)

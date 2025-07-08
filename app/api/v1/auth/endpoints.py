@@ -30,7 +30,9 @@ async def login_for_access_token(
     token_service: TokenService = Depends(get_token_service),
 ):
     try:
-        user_id = await user_service.authenticate_user(get_auth_request(form_data))
+        user_id, role = await user_service.authenticate_user(
+            get_auth_request(form_data)
+        )
     except InvalidPasswordError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -41,7 +43,7 @@ async def login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email not found",
         )
-    tokens = await token_service.create_tokens(user_id=user_id, data_dict={})
+    tokens = await token_service.create_tokens(user_id=user_id, data_dict={}, role=role)
     await token_service.repository.session.commit()
     return tokens
 
@@ -62,10 +64,14 @@ async def refresh_tokens(
     token_service: TokenService = Depends(get_token_service),
 ):
     try:
-        user_id = await token_service.decode_and_verify_refresh_token(refresh_token)
+        user_id, role = await token_service.decode_and_verify_refresh_token(
+            refresh_token
+        )
         if not await token_service.delete_refresh_token(refresh_token):
             raise InvalidRefreshToken()
-        tokens = await token_service.create_tokens(user_id=user_id, data_dict={})
+        tokens = await token_service.create_tokens(
+            user_id=user_id, data_dict={}, role=role
+        )
         await token_service.repository.session.commit()
         return tokens
 
